@@ -6,7 +6,7 @@ use strict;
 
 use Data::Dumper;
 use Karma;
-use Act::SpecialAct;
+use Act;
 
 our $VERSION = '0.01';
 
@@ -19,50 +19,71 @@ package KWrap {
 			path => $path
 		};
 		bless $self, $class;
-		
-		$self->{k}->load(path => "$self->{path}/Karma");
+
+		if (-e "$self->{path}/Karma") {
+			$self->{k}->load(path => "$self->{path}/Karma");
+		} else {
+			$self->{k}->save(path => "$self->{path}/Karma");
+		}
 		
 		return $self;
 	}
 	
 	sub cycle {
-	
-	}
-	
-	sub lifetime {
-	
+		my ($self, $log) = @_; # should relevant timestamp be fed in from caller, or generated here?
+		
+		
+		my $actId = $self->{k}->cycle();
+		$self->{k}->save(path => "$self->{path}/Karma");
+
+		
+		# don't forget to listen for undefs ... this will result in a lot of repeated code,
+		# try to emulate a save function wrapper for cycle, peek, prime &c, or at least
+		# hide the path interpolation ...
+		
+		
+		my $act = KWrap::Act->new("$self->{path}/$actId");
+		$act->addLog($log);
+		
+		return $act->getProperties();
 	}
 	
 	sub peek {
-		my $self = @_;
-		my $actId = $self->{k}->peek();
-		my $act = Act::SpecialAct->new("$self->{path}/$actId");
-		# ...
+		my ($self) = @_;
 		
+		my $actId = $self->{k}->peek();
+		$self->{k}->save(path => "$self->{path}/Karma");
+		
+		my $act = KWrap::Act->new("$self->{path}/$actId");
+		return $act->getProperties();
 	}
 	
 	sub prime {
-	
+		my ($self) = @_;
+		
+		my $actId = $self->{k}->prime();
+		$self->{k}->save(path => "$self->{path}/Karma");
+		
+		my $act = KWrap::Act->new("$self->{path}/$actId");
+		return $act->getProperties();
 	}
 	
+	
 	sub push {
-		my ($self, $name, $description, $lifetime) = @_; #
-		name, description should be extensible properties of the ABC act.
-		# arg val done by karma and act classes.
+		my ($self, $actProperties, $lifetime) = @_;
+		# arg val done by karma and act classes
 		
 		my $actId = $self->{k}->length();
 		$self->{k}->push($actId, $lifetime);
 		$self->{k}->save(path => "$self->{path}/Karma");
 	
 		mkdir "$self->{path}/$actId";
-		my $act = Act::SpecialAct->new("$self->{path}/$actId");
-		$act->amISpecial();
-		$act->setName($name);
-		$act->setDescription($description);
+		my $act = KWrap::Act->new("$self->{path}/$actId");
+		$act->setProperties($actProperties);
 	}
 	
 	sub relax {
-		my $self = @_;
+		my ($self) = @_;
 		$self->{k}->relax();
 		$self->{k}->save(path => "$self->{path}/Karma");
 	}
@@ -74,8 +95,7 @@ package KWrap {
 
 1;
 
-	
-	
+
 #sub new($class, %args)
 #sub cycle($self)
 #sub length($self)

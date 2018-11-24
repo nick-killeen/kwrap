@@ -1,6 +1,3 @@
-# Karma/testKarma.pl
-# Nicholas Killeen,
-# 23rd November 2018.
 # Autotests for KWrap.
 
 use warnings;
@@ -13,3 +10,5 @@ use KWrap;
 sub testKWrap {
 	print "testing ...";
 }
+
+testKWrap @ARGV;

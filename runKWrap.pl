@@ -10,7 +10,11 @@ use KWrap;
 sub main {
 	mkdir "data";
 	my $kw = KWrap->new("data");
-	$kw->push("name", "desc", 60);
+	$kw->push({a => "ayy", b => "bee", c => "cee"}, 60);
+	my %p = $kw->cycle();
+	for (keys %p) {
+		print "$_: $p{$_}\n";
+	}
 }
 
 main @ARGV;
