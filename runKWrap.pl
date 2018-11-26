@@ -11,7 +11,7 @@ sub main {
 	mkdir "data";
 	my $kw = KWrap->new("data");
 	$kw->push({a => "ayy", b => "bee", c => "cee"}, 60);
-	my %p = $kw->cycle();
+	my %p = $kw->cycle("<log msg>");
 	for (keys %p) {
 		print "$_: $p{$_}\n";
 	}
