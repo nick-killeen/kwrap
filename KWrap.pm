@@ -29,6 +29,8 @@ package KWrap {
 		return $self;
 	}
 	
+	# re-add logging, but don't have it be complicit with cycling?
+	
 	sub cycle {
 		my ($self) = @_;
 		
@@ -42,8 +44,6 @@ package KWrap {
 		
 		
 		my $act = KWrap::Act->new("$self->{path}/$actId");
-		$act->addLog($log);
-		
 		return $act->getProperties();
 	}
 	
@@ -78,7 +78,7 @@ package KWrap {
 	
 		mkdir "$self->{path}/$actId";
 		my $act = KWrap::Act->new("$self->{path}/$actId");
-		$act->setProperties($actProperties);
+		$act->setProperties(%$actProperties);
 	}
 	
 	sub relax {

@@ -3,9 +3,10 @@ use strict;
 
 package KWrap::Act {
 	sub new {
-		my ($class, $path) = @_;
+		my ($class, $path, $id) = @_;
 		my $self = {
-			path => $path
+			path => $path,
+			id => $id
 		};
 		return bless $self, $class;
 	}
@@ -13,7 +14,7 @@ package KWrap::Act {
 	sub getProperties {
 		my ($self) = @_;
 		
-		opendir my $dh, "$self->{path}";
+		opendir my $dh, "$self->{path}/$self->{id}";
 		my @keys = readdir $dh;
 		closedir $dh;
 		
@@ -22,7 +23,7 @@ package KWrap::Act {
 		my %properties = ();
 		for (@keys) {
 			chomp $_;
-			open my $fh, "<", "$self->{path}/$_";
+			open my $fh, "<", "$self->{path}/$self->{id}/$_";
 			$properties{$_} = <$fh>;
 			close $fh;
 		}
@@ -32,13 +33,13 @@ package KWrap::Act {
 	}
 	
 	sub setProperties {
-		my ($self, $properties) = @_;
-
-		mkdir "$self->{path}/$LOG_FOLDER";
+		my ($self, %properties) = @_;
 		
-		for (keys %$properties) {
-			open my $fh, ">", "$self->{path}/$_";
-			print $fh $properties->{$_};
+		die "Cannot set reserved property 'id'." if defined $properties{id};
+		
+		for (keys %properties) {
+			open my $fh, ">", "$self->{path}/$self->{id}/$_";
+			print $fh $properties{$_};
 			close $fh;
 		}
 	}

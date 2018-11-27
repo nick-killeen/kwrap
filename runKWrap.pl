@@ -1,7 +1,5 @@
 # Run KWrap.
 
-# This isn't really a shippable module ... cull h2xs directory structure wholly? it isn't needed?
-
 use warnings;
 use strict;
 
@@ -11,10 +9,28 @@ sub main {
 	mkdir "data";
 	my $kw = KWrap->new("data");
 	$kw->push({a => "ayy", b => "bee", c => "cee"}, 60);
-	my %p = $kw->cycle("<log msg>");
+	my %p = $kw->cycle();
 	for (keys %p) {
 		print "$_: $p{$_}\n";
 	}
 }
 
 main @ARGV;
+
+# > peek
+# < id:          XXX
+# < name:        YYY
+# < desc:        ZZZ
+# < other_props: ...
+
+# > prime
+# < id:          XXX
+# < name:        YYY
+# < desc:        ZZZ
+# < other_props: ...
+
+# > cycle <logs>
+# < id:          XXX
+# < name:        YYY
+# < desc:        ZZZ
+# < other_props: ...
