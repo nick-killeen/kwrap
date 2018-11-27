@@ -30,8 +30,7 @@ package KWrap {
 	}
 	
 	sub cycle {
-		my ($self, $log) = @_; # should relevant timestamp be fed in from caller, or generated here?
-		
+		my ($self) = @_;
 		
 		my $actId = $self->{k}->cycle();
 		$self->{k}->save(path => "$self->{path}/Karma");
@@ -105,11 +104,8 @@ package KWrap {
 #sub prime($self)
 #sub push($self, $actId, $lifetime)
 #sub relax($self)
-#sub remove($self)
+#sub remove($self, $actId)
 #sub save($self, %args)
-
-
-
 
 __END__
 
