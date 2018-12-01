@@ -22,7 +22,6 @@ sub evaluate {
 			$result = $kw->prime();             # "What's next?" or "I don't like that but want to do something now, gimme!"
 		} elsif ($command eq "cycle") {
 			$result = $kw->cycle();	            # "I just did that, and I wrote logs separately in Cal74" 
-			
 		} elsif ($command eq "relax") {
 			$result = $kw->relax();             # "I don't feel like doing that too soon ... I want to live in ignorance for a while, let me relax."
 		} else {

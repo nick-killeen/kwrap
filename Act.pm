@@ -3,26 +3,32 @@ use strict;
 
 package KWrap::Act {
 	sub new {
-		my ($class, $path) = @_;
+		my ($class, $path, $actId) = @_;
+		
 		my $self = {
-			path => $path
+			path => $path,
+			actId => $actId
 		};
-		return bless $self, $class;
+		bless $self, $class;
+		
+		mkdir "$self->{path}/$self->{actId}";
+		
+		return $self;
 	}
 	
 	sub getProperties {
 		my ($self) = @_;
 		
-		opendir my $dh, "$self->{path}";
+		opendir my $dh, "$self->{path}/$self->{actId}";
 		my @keys = readdir $dh;
 		closedir $dh;
 		
 		@keys = grep {!/^\.\.?$/} @keys; # ignore '.', '..'
 
-		my $properties = {};
+		my $properties = {id => $self->{actId}};
 		for (@keys) {
 			chomp $_;
-			open my $fh, "<", "$self->{path}/$_";
+			open my $fh, "<", "$self->{path}/$self->{actId}/$_";
 			$properties->{$_} = <$fh>;
 			close $fh;
 		}
@@ -35,7 +41,7 @@ package KWrap::Act {
 		my ($self, $properties) = @_;
 
 		for (keys %$properties) {
-			open my $fh, ">", "$self->{path}/$_";
+			open my $fh, ">", "$self->{path}/$self->{actId}/$_";
 			print $fh $properties->{$_};
 			close $fh;
 		}

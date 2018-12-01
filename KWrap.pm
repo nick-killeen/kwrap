@@ -31,7 +31,7 @@ package KWrap {
 		my ($self) = @_;
 		
 		my $actId = $self->{k}->cycle();
-		my $act = KWrap::Act->new("$self->{path}/$actId");
+		my $act = KWrap::Act->new($self->{path}, $actId);
 		return $act->getProperties();
 	}
 	
@@ -39,7 +39,7 @@ package KWrap {
 		my ($self) = @_;
 		
 		my $actId = $self->{k}->peek();
-		my $act = KWrap::Act->new("$self->{path}/$actId");
+		my $act = KWrap::Act->new($self->{path}, $actId);
 		return $act->getProperties();
 	}
 	
@@ -47,7 +47,7 @@ package KWrap {
 		my ($self) = @_;
 		
 		my $actId = $self->{k}->prime();
-		my $act = KWrap::Act->new("$self->{path}/$actId");
+		my $act = KWrap::Act->new($self->{path}, $actId);
 		return $act->getProperties();
 	}
 	
@@ -70,8 +70,7 @@ package KWrap {
 		my $actId = $self->{k}->length();
 		$self->{k}->push($actId, $lifetime);
 	
-		mkdir "$self->{path}/$actId";
-		my $act = KWrap::Act->new("$self->{path}/$actId");
+		my $act = KWrap::Act->new($self->{path}, $actId);
 		$act->setProperties($properties);
 		return $act->getProperties(); # myeh ...
 	}
