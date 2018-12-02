@@ -6,7 +6,18 @@ use strict;
 
 use Data::Dumper;
 use Karma;
-use Act;
+
+
+sub slurp {
+	my $input = "";
+	while (<>) {
+		chomp $_;
+		last if ($_ eq ''); # this still concats even if last I think, so I am left with something one line too long. I need to change things here.
+		$input .= "$_\n"; # deck
+	}
+	return $input;
+}
+
 
 package KWrap {
 	sub new {
@@ -23,6 +34,8 @@ package KWrap {
 		} else {
 			$self->{k}->save(path => "$self->{path}/Karma");
 		}
+		
+		mkdir "$self->{path}/acts";
 		
 		return $self;
 	}
@@ -49,26 +62,24 @@ package KWrap {
 	}
 	
 	
-	sub push {  # ???  ?? ?. . .TODO FIX
-		my ($self, $lifetime, @propertyNames) = @_;
+	sub push {
+		my ($self, $lifetime) = @_;
 		# arg val done by karma and act classes
 		
 		# check lifetime validity first please lt3
-		
-		my $properties = {};
-		for (@propertyNames) {
-			print "% $_: ";
-			$properties->{$_} = <>; # perform user input first so that things won't become half baked if we die half way through.
-			                        # wait ... maybe it's good for things to become half baked, so partial progress is preserved if we die?
-			chomp $properties->{$_};
-		}
-		
-		
 		my $actId = $self->{k}->length();
 		$self->{k}->push($actId, $lifetime);
-	
-		my $act = KWrap::Act->new($self->{path}, $actId);
-		$act->setProperties($properties);
+		
+		
+		my $contents = ::slurp(); # HACK
+		
+		
+		
+		
+		open my $fh, ">", "$self->{path}/acts/$actId";
+		print $fh $contents;
+		close $fh;
+		
 		return $self->lookup($actId);
 	}
 	
@@ -100,9 +111,19 @@ package KWrap {
 	sub lookup {
 		my ($self, $actId) = @_;
 		
-		my $act = KWrap::Act->new($self->{path}, $actId);
-		return $act->getProperties();
+		open my $fh, "<", "$self->{path}/acts/$actId"; # handle death gracefully
+		my $contents = do {local $/ = undef; <$fh>; };
+		close $fh;
+		return (
+			id => $actId,
+			lifetime => $self->{k}->lifetime($actId),
+			contents => $contents
+		);
 	}
+	
+	
+
+	
 }
 
 1;

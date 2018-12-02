@@ -5,6 +5,8 @@ use strict;
 
 use KWrap;
 
+# This kwrap stores unstructured data, as at the removal of properties ... 
+
 
 # evaluate :: token [args] -> [char]
 sub evaluate {
@@ -52,11 +54,10 @@ sub evaluate {
 
 # enforce unique bucket names
 
-
-# no bucket names for now ... XP
+# I should have multiple buckets, no? 
 
 sub main {
-	# print @_;
+	# print @_; # @_ should contain bucket name
 
 	mkdir "data";
 	my $kw = KWrap->new("data");
@@ -68,9 +69,9 @@ sub main {
 		return if $_ eq "";
 		
 		my @tokens = split(" ", $_);
-		my $result = evaluate($kw, @tokens);
+		my %result = evaluate($kw, @tokens);
 		$kw->save();
-		print "$_: $result->{$_}\n" for (keys %$result);
+		print "$_: $result{$_}\n" for (keys %result);
 
 		print "\$ "; # i shouldn't print this if terminating.
 	}
