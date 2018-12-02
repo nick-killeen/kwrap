@@ -10,25 +10,21 @@ use KWrap;
 sub evaluate {
 	my ($kw, $command, @args) = @_;
 		$kw // die; 
-		
-		my $result;
-		if ($command eq "push") {
-			$result = $kw->push(@args); # last arg is lifetime
-			#$result = $kw->push(@args); # pushing will eventually certainly be more complicated than this ... maybe prompt for further user input? maybe say "push name desc XXX" and we can prompt thrice for name, desc, and XXX?
-			                            # maybe, on prompting, give the option to say "from C:/users/nicho/..." and it will mv the file into the act prop subdir?
-		} elsif ($command eq "peek") {
-			$result = $kw->peek();              # "Um ... what was next again?"
-		} elsif ($command eq "prime") {
-			$result = $kw->prime();             # "What's next?" or "I don't like that but want to do something now, gimme!"
-		} elsif ($command eq "cycle") {
-			$result = $kw->cycle();	            # "I just did that, and I wrote logs separately in Cal74" 
-		} elsif ($command eq "relax") {
-			$result = $kw->relax();             # "I don't feel like doing that too soon ... I want to live in ignorance for a while, let me relax."
-		} else {
-			die "$command is not a command";    # death is too harsh
-		}
-		
-		return $result; # results should be a string!
+
+		# todo pithen
+		my %aliases = (
+			push   => sub {$kw->push(@_)},
+			peek   => sub {$kw->peek(@_)},    # "um ... what was next again?"
+			prime  => sub {$kw->prime(@_)},   # "what's next?" or "i don't like that but want to do something now, gimme!"
+			cycle  => sub {$kw->cycle(@_)},   # "i just did that, and i wrote logs separately in cal74" 
+			relax  => sub {$kw->relax(@_)},   # "i don't feel like doing that too soon ... i want to live in ignorance for a while, let me relax."
+			remove => sub {$kw->remove(@_)},  # remove :: id -> void  ;  get :: id -> props ... 
+			edit   => sub {$kw->edit(@_)},
+			lookup => sub {$kw->lookup(@_)}
+		);
+	
+		$aliases{$command} //= sub {{error => "'$command' is not a valid command."}};
+		return $aliases{$command}->(@args);
 		
 		# $kw->save ... or should I save within KW? well ... If i save within KW, then i probably should be saving just withing K.
 		# (then perform autosave) ... also, am i guaranteed atomicity in general when I edit files? is it already impossible at the OS level to corrupt INDIVIDUAL files w/ ctrl-C? 
@@ -39,6 +35,20 @@ sub evaluate {
 		
 		# "What's the difference between relaxing and priming, as opposed to just priming?" ...
 }
+
+# usually
+# > peek     -- What next?
+# > cycle    -- I did that
+# > peek     -- What next?
+# > cycle    -- I did that
+# > peek     -- What next? oh wait, goodnight
+# > peek     -- What next again?
+# > cycle    -- I did that
+# > peek     -- What next?
+# > prime    -- Myeh ... I don't want to do that right now, what next?
+# > peek     -- What next?
+# > relax    -- Myeh ... I don't want to do that right now, or anything for that matter. let me relax.
+
 
 # enforce unique bucket names
 
@@ -51,6 +61,7 @@ sub main {
 	mkdir "data";
 	my $kw = KWrap->new("data");
 	
+	print "\$ ";
 	while (<>) {
 		chomp $_;
 		
@@ -58,13 +69,14 @@ sub main {
 		
 		my @tokens = split(" ", $_);
 		my $result = evaluate($kw, @tokens);
-		$kw->save(); # where exactly to save? idk, try to match it up with the other file writes.
-		print "$_: $result->{$_}\n" for (keys %$result) #    (in most cases)
-		#
+		$kw->save();
+		print "$_: $result->{$_}\n" for (keys %$result);
 
-		
+		print "\$ "; # i shouldn't print this if terminating.
 	}
 }
+
+# structure is required ... so a delimiter is needed.
 
 main @ARGV;
 

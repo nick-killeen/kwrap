@@ -31,24 +31,21 @@ package KWrap {
 		my ($self) = @_;
 		
 		my $actId = $self->{k}->cycle();
-		my $act = KWrap::Act->new($self->{path}, $actId);
-		return $act->getProperties();
+		return $self->lookup($actId);
 	}
 	
 	sub peek {
 		my ($self) = @_;
 		
 		my $actId = $self->{k}->peek();
-		my $act = KWrap::Act->new($self->{path}, $actId);
-		return $act->getProperties();
+		return $self->lookup($actId)
 	}
 	
 	sub prime {
 		my ($self) = @_;
 		
 		my $actId = $self->{k}->prime();
-		my $act = KWrap::Act->new($self->{path}, $actId);
-		return $act->getProperties();
+		return $self->lookup($actId);
 	}
 	
 	
@@ -60,7 +57,7 @@ package KWrap {
 		
 		my $properties = {};
 		for (@propertyNames) {
-			print "$_: ";
+			print "% $_: ";
 			$properties->{$_} = <>; # perform user input first so that things won't become half baked if we die half way through.
 			                        # wait ... maybe it's good for things to become half baked, so partial progress is preserved if we die?
 			chomp $properties->{$_};
@@ -72,10 +69,8 @@ package KWrap {
 	
 		my $act = KWrap::Act->new($self->{path}, $actId);
 		$act->setProperties($properties);
-		return $act->getProperties(); # myeh ...
+		return $self->lookup($actId);
 	}
-	
-	# Hey, something went wrong! I did a 2 in 1 ...
 	
 	sub relax {
 		my ($self) = @_;
@@ -90,7 +85,23 @@ package KWrap {
 	}
 	
 	sub remove {
+		my ($self, $actId) = @_;
+		
+		$self->{k}->remove($actId); # this removes from the cycle, but doesn't remove the act's contents.
+		return {okay => "I removed $actId"} # duplicate removal doesn't complain ... 
+	}
 	
+	sub edit {
+		my ($self, $actId) = @_;
+		# print old, ask for new ... but i'm not usually resposible for printing! :(
+		# i guess i don't need to print old, trusting that caller already knows.
+	}
+	
+	sub lookup {
+		my ($self, $actId) = @_;
+		
+		my $act = KWrap::Act->new($self->{path}, $actId);
+		return $act->getProperties();
 	}
 }
 
