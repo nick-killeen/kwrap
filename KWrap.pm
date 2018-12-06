@@ -20,8 +20,11 @@ package KWrap {
 			path            => "KWrap",
 			slurpTo         => sub { system "vim $_[0]"; },   # :: path -> void (opens stdin port)
 			spewFrom        => sub { system "vim -R $_[0]"; } # :: path -> void (opens stdout port)
-			defaultLifetime => 5;                                                                                                             # TODO
+			defaultLifetime => undef; # undef will cause complaints if no lifetime is provided (unless recycle policy is unfair)
 			eagerLookup     => 1; # lookupAfter => 0 | 1 .... do we want to look up acts that we cycle, or is it okay just to show the ID?    # TODO
+			
+			# I need to have the same default recycling policy?
+			
 		};
 
 		my %karmaArgs = %args;
@@ -29,7 +32,7 @@ package KWrap {
 		$self->{k} = Karma->new(%karmaArgs);
 		
 		# The Karma constructor will complain if it had recieved any invalid
-		# arguments, so, at this point, we needn't question that the %args make
+		# arguments, so, at this point, we needn't question that %args make(s)
 		# sense either to Karma or KWrap.
 		$self->{$_} = $args{$_} for (keys %args);
 		
@@ -46,15 +49,14 @@ package KWrap {
 		return $self;
 	}
 	
-	# this currently trusts the veracity of IDs ...
+	# this currently trusts the veracity of IDs ... feel free to die otherwise.
 	sub _yieldAct {
 		my ($self, $actId) = @_;
 		
 		if ($self->{eagerLookup}) {
 			$self->{spewFrom}->("$self->{path}/acts/$actId");
 		}
-
-		return $actId;
+		return (actId => $actId);
 		
 	}
 	
@@ -69,7 +71,6 @@ package KWrap {
 		my ($self) = @_;
 		
 		my $actId = $self->{k}->peek();
-		
 		return $self->_yieldAct($actId)
 	}
 	
@@ -77,10 +78,8 @@ package KWrap {
 		my ($self) = @_;
 		
 		my $actId = $self->{k}->prime();
-		
 		return $self->_yieldAct($actId);
 	}
-	
 	
 	sub push {
 		my ($self, $lifetime) = @_;
@@ -88,9 +87,7 @@ package KWrap {
 		# make sure lifetime isn't overtly invalid.
 		
 		$lifetime //= $self->{defaultLifetime};
-		
-		# I need to validate lifetime ...
-		
+	
 		if ($self->{recycle} eq "eternal" or $self->{recycle} eq "destruct") {
 			$lifetime //= 1; # give any valid (non-zero) lifetime if none is provided; they are all treated the same.
 		}
@@ -100,7 +97,7 @@ package KWrap {
 
 		$self->{slurpTo}->("$self->{path}/acts/$actId");
 		
-		return $actId;
+		return (actId => $actId);
 	}
 	
 	sub relax {
@@ -108,14 +105,13 @@ package KWrap {
 		
 		$self->{k}->relax();
 		
-		return (errorMessage => undef);
+		return ();
 	}
 	
 	sub save {
 		my ($self) = @_;
 	
 		$self->{k}->save(path => "$self->{path}/Karma");
-		# this isn't an evaluatory fn, no retval needed.
 	}
 	
 	sub remove {
@@ -130,7 +126,7 @@ package KWrap {
 		# ??? what should this return ???  I think it's good for it to unconditionally spew, so that you can verify which act it removed ... but spewing is disorientating.
 		# well .. for them to have performed a removal, they should have just spewed? so no need to do so again, 
 		# just yield the actId so that they can once more check they entered the same thing as above.
-		return $actId;
+		return ();
 	}
 	
 	sub edit {
@@ -139,7 +135,7 @@ package KWrap {
 		
 		$self->{slurpTo}->("$self->{path}/acts/$actId");
 		
-		return (errorMessage => undef);
+		return ();
 	}
 	
 	# in general, don't go telling people their ttl unless they ask,
@@ -152,11 +148,19 @@ package KWrap {
 		
 		$self->{spewFrom}->("$self->{path}/acts/$actId");
 		
-		return $actId; # ... ?
+		
+		return (actId => $actId, lifetime => $self->{k}->lifetime($actId)); # caller can choose to ignore based on recycling policy.
 		# this is purely an interface function, 
 		
 		#return (errorMessage => undef); # a triple return code of emsg, ttl, id; leaves things to the caller ... which is somewhat what i want to do, wrt. inversion
 		                                # but is there any way to make it neat, or neater?
+	}
+	
+	sub lifetime {
+		my ($self, $actId) = @_;
+		(-e "$self->{path}/acts/$actId") or return (errorMessage => "Act $actId does not exist, cannot check lifetime.");
+		
+		return (lifetime => self->{k}->lifetime($actId));
 	}
 	
 	

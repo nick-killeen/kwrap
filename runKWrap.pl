@@ -13,15 +13,14 @@ sub evaluate {
 
 		# I need better aliases ... maybe? at least ttl.
 		my %aliases = (
-			push   => sub {$kw->push(@_)},
-			peek   => sub {$kw->peek(@_)},
-			prime  => sub {$kw->prime(@_)},
-			cycle  => sub {$kw->cycle(@_)},
-			relax  => sub {$kw->relax(@_)},
-			remove => sub {$kw->remove(@_)},
-			edit   => sub {$kw->edit(@_)},
-			# lookup => sub {$kw->lookup(@_)}   -- todo, replace!
-			# buff ttl
+			push     => sub {$kw->push(@_)},
+			peek     => sub {$kw->peek(@_)},
+			prime    => sub {$kw->prime(@_)},
+			cycle    => sub {$kw->cycle(@_)},
+			relax    => sub {$kw->relax(@_)},
+			remove   => sub {$kw->remove(@_)},
+			edit     => sub {$kw->edit(@_)},
+			lookup   => sub {$kw->lookup(@_)},
 		);
 	
 		$kw->save();
@@ -61,7 +60,7 @@ sub main {
 		
 		my @tokens = split(" ", $_);
 		my %result = evaluate($kw, @tokens);
-		print $result{errorMessage} if (defined $result{errorMessage});
+		print "$_ $result{$_}" for (keys %result);
 	}
 }
 
