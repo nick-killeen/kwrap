@@ -17,9 +17,11 @@ package KWrap {
 		# there must be no naming collisions with Karma
 		# TODO, handle eternal 5 5 5 5 5 5 5 5 5 5 5 lifetime
 		my $self = {
-			path     => "KWrap",
-			slurpTo  => sub { system "vim $_[0]"; },   # :: path -> void (opens stdin port)
-			spewFrom => sub { system "vim -R $_[0]"; } # :: path -> void (opens stdout port)
+			path            => "KWrap",
+			slurpTo         => sub { system "vim $_[0]"; },   # :: path -> void (opens stdin port)
+			spewFrom        => sub { system "vim -R $_[0]"; } # :: path -> void (opens stdout port)
+			defaultLifetime => 5;                                                                                                             # TODO
+			eagerLookup     => 1; # lookupAfter => 0 | 1 .... do we want to look up acts that we cycle, or is it okay just to show the ID?    # TODO
 		};
 
 		my %karmaArgs = %args;
@@ -44,11 +46,23 @@ package KWrap {
 		return $self;
 	}
 	
+	# this currently trusts the veracity of IDs ...
+	sub _yieldAct {
+		my ($self, $actId) = @_;
+		
+		if ($self->{eagerLookup}) {
+			$self->{spewFrom}->("$self->{path}/acts/$actId");
+		}
+
+		return $actId;
+		
+	}
+	
 	sub cycle {
 		my ($self) = @_;
 		
 		my $actId = $self->{k}->cycle();
-		return $self->lookup($actId);
+		return $self->_yieldAct($actId);
 	}
 	
 	sub peek {
@@ -56,7 +70,7 @@ package KWrap {
 		
 		my $actId = $self->{k}->peek();
 		
-		return $self->lookup($actId)
+		return $self->_yieldAct($actId)
 	}
 	
 	sub prime {
@@ -64,20 +78,29 @@ package KWrap {
 		
 		my $actId = $self->{k}->prime();
 		
-		return $self->lookup($actId);
+		return $self->_yieldAct($actId);
 	}
 	
 	
 	sub push {
 		my ($self, $lifetime) = @_;
 		
+		# make sure lifetime isn't overtly invalid.
+		
+		$lifetime //= $self->{defaultLifetime};
+		
+		# I need to validate lifetime ...
+		
+		if ($self->{recycle} eq "eternal" or $self->{recycle} eq "destruct") {
+			$lifetime //= 1; # give any valid (non-zero) lifetime if none is provided; they are all treated the same.
+		}
+		
 		my $actId = $self->{k}->length();
-		$self->{k}->push($actId, $lifetime); # handle death caused by invalid lifetime gracefully?
-
+		$self->{k}->push($actId, $lifetime);
 
 		$self->{slurpTo}->("$self->{path}/acts/$actId");
 		
-		return (errorMessage => undef); #  Do i want to let the caller know the ID I pushed? No, you should vimify that somehow ... have it the first line of the act.
+		return $actId;
 	}
 	
 	sub relax {
@@ -97,36 +120,56 @@ package KWrap {
 	
 	sub remove {
 		my ($self, $actId) = @_;
-		(-e "$self->{path}/acts/$actId") or return (errorMessage => "Act $actId does no exist, cannot remove.");
+		(-e "$self->{path}/acts/$actId") or return (errorMessage => "Act $actId does not exist, cannot remove.");
 		# actId must also be in Karma to be able to remove it.
+		
+		# Oh, removal should definitely only be soft.
 		
 		$self->{k}->remove($actId);
 		
-		return $self->lookup($actId);
+		# ??? what should this return ???  I think it's good for it to unconditionally spew, so that you can verify which act it removed ... but spewing is disorientating.
+		# well .. for them to have performed a removal, they should have just spewed? so no need to do so again, 
+		# just yield the actId so that they can once more check they entered the same thing as above.
+		return $actId;
 	}
 	
 	sub edit {
 		my ($self, $actId) = @_;
-		(-e "$self->{path}/acts/$actId") or return (errorMessage => "Act $actId does no exist, cannot edit.");
+		(-e "$self->{path}/acts/$actId") or return (errorMessage => "Act $actId does not exist, cannot edit.");
 		
 		$self->{slurpTo}->("$self->{path}/acts/$actId");
 		
 		return (errorMessage => undef);
 	}
 	
+	# in general, don't go telling people their ttl unless they ask,
+	# and don't ask if their answer doesn't matter.
+	
+	
 	sub lookup {
 		my ($self, $actId) = @_;
-		(-e "$self->{path}/acts/$actId") or return (errorMessage => "Act $actId does no exist, cannot lookup.");
+		(-e "$self->{path}/acts/$actId") or return (errorMessage => "Act $actId does not exist, cannot lookup.");
 		
 		$self->{spewFrom}->("$self->{path}/acts/$actId");
 		
-		return (errorMessage => undef);
+		return $actId; # ... ?
+		# this is purely an interface function, 
+		
+		#return (errorMessage => undef); # a triple return code of emsg, ttl, id; leaves things to the caller ... which is somewhat what i want to do, wrt. inversion
+		                                # but is there any way to make it neat, or neater?
 	}
+	
+	
+	# sub lifetime ...
 	
 	# Do I also want a way to buff (or otherwise edit) ttl?
 	# I should have an option for KWrap to work w/ eternal.
 	
 }
+
+
+# lifetime is a separate thing from lookup.
+# ah, but entering lifetime when pushing -- to do that, i need to check recycling laws.
 
 1;
 

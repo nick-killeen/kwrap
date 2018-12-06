@@ -5,16 +5,13 @@ use strict;
 
 use KWrap;
 
-# This kwrap stores unstructured data, as at the removal of properties ... 
-
 # Kwrap should become an absolute stats unit to help me decide from which pool I should be pulling ... thus I should keep a log of things internally.
 
-
-# evaluate :: token [args] -> [char]
 sub evaluate {
 	my ($kw, $command, @args) = @_;
 		$kw // die; 
 
+		# I need better aliases ... maybe? at least ttl.
 		my %aliases = (
 			push   => sub {$kw->push(@_)},
 			peek   => sub {$kw->peek(@_)},
@@ -23,7 +20,8 @@ sub evaluate {
 			relax  => sub {$kw->relax(@_)},
 			remove => sub {$kw->remove(@_)},
 			edit   => sub {$kw->edit(@_)},
-			lookup => sub {$kw->lookup(@_)}
+			# lookup => sub {$kw->lookup(@_)}   -- todo, replace!
+			# buff ttl
 		);
 	
 		$kw->save();
@@ -63,7 +61,7 @@ sub main {
 		
 		my @tokens = split(" ", $_);
 		my %result = evaluate($kw, @tokens);
-		print $result{errorMessage} if (defined $result{errorMessage})
+		print $result{errorMessage} if (defined $result{errorMessage});
 	}
 }
 
