@@ -7,8 +7,12 @@ use strict;
 use Data::Dumper;
 use Karma;
 
-# I will probably want this to be an arg to KWrap, or default ...
-
+# Public functions return hashes with some number of:
+# errorMessage,
+# actId,
+# lifetime,
+# spewHandle,
+# slurpHandle
 
 package KWrap {
 	sub new {
@@ -18,13 +22,9 @@ package KWrap {
 		# TODO, handle eternal 5 5 5 5 5 5 5 5 5 5 5 lifetime
 		my $self = {
 			path            => "KWrap",
-			slurpTo         => sub { system "vim $_[0]"; },   # :: path -> void (opens stdin port)
-			spewFrom        => sub { system "vim -R $_[0]"; } # :: path -> void (opens stdout port)
-			defaultLifetime => undef; # undef will cause complaints if no lifetime is provided (unless recycle policy is unfair)
-			eagerLookup     => 1; # lookupAfter => 0 | 1 .... do we want to look up acts that we cycle, or is it okay just to show the ID?    # TODO
-			
-			# I need to have the same default recycling policy?
-			
+			slurpTo         => sub { system "vim $_[0]" },   # :: path -> void (opens stdin port)
+			spewFrom        => sub { system "vim -R $_[0]" }, # :: path -> void (opens stdout port)
+			defaultLifetime => undef, # undef will cause complaints if no lifetime is provided (unless recycle policy is unfair)
 		};
 
 		my %karmaArgs = %args;
@@ -37,11 +37,15 @@ package KWrap {
 		$self->{$_} = $args{$_} for (keys %args);
 		
 		bless $self, $class;
-		
+	
+		if ($self->{recycle} eq "eternal" or $self->{recycle} eq "destruct") {
+			$self->{defaultLifetime} //= 1;
+		}
+	
 		if (-e "$self->{path}/Karma") {
 			$self->{k}->load(path => "$self->{path}/Karma");
 		} else {
-			$self->{k}->save(path => "$self->{path}/Karma");
+			$self->{k}->_save();
 		}
 	
 		mkdir "$self->{path}/acts";
@@ -50,124 +54,114 @@ package KWrap {
 	}
 	
 	# this currently trusts the veracity of IDs ... feel free to die otherwise.
-	sub _yieldAct {
+	sub _getAct {
 		my ($self, $actId) = @_;
 		
-		if ($self->{eagerLookup}) {
-			$self->{spewFrom}->("$self->{path}/acts/$actId");
-		}
-		return (actId => $actId);
+		return (
+			actId      => $actId,
+			lifetime   => $self->{k}->lifetime($actId),
+			spewHandle => sub { $self->{spewFrom}->("$self->{path}/acts/$actId") }
+		);
 		
+	}
+	
+	sub _setAct {
+		my ($self, $actId) = @_;
+		
+		return (
+			actId      => $actId,
+			lifetime   => $self->{k}->lifetime($actId),
+			slurpHandle => sub { $self->{slurpTo}->("$self->{path}/acts/$actId"); $self->_save(); } # slurping and saving must be done at once to achieve atomicity and synchronicity of KW and K
+		);
+	}
+	
+	sub _save {
+		my ($self) = @_;
+		
+		$self->{k}->save(path => "$self->{path}/Karma");
 	}
 	
 	sub cycle {
 		my ($self) = @_;
 		
 		my $actId = $self->{k}->cycle();
-		return $self->_yieldAct($actId);
+		$self->_save();
+		
+		return $self->_getAct($actId);
 	}
 	
 	sub peek {
 		my ($self) = @_;
 		
 		my $actId = $self->{k}->peek();
-		return $self->_yieldAct($actId)
+		$self->_save();
+		
+		return $self->_getAct($actId)
 	}
 	
 	sub prime {
 		my ($self) = @_;
 		
 		my $actId = $self->{k}->prime();
-		return $self->_yieldAct($actId);
+		$self->_save();
+		
+		return $self->_getAct($actId);
 	}
 	
 	sub push {
 		my ($self, $lifetime) = @_;
-		
-		# make sure lifetime isn't overtly invalid.
-		
 		$lifetime //= $self->{defaultLifetime};
-	
-		if ($self->{recycle} eq "eternal" or $self->{recycle} eq "destruct") {
-			$lifetime //= 1; # give any valid (non-zero) lifetime if none is provided; they are all treated the same.
-		}
 		
-		my $actId = $self->{k}->length();
+		opendir my $dh, "$self->{path}/acts";
+		my @directories = <$dh>
+		closedir $fh;
+		my $actId = @directories;
+		
 		$self->{k}->push($actId, $lifetime);
-
-		$self->{slurpTo}->("$self->{path}/acts/$actId");
-		
-		return (actId => $actId);
+	
+		return $self->_setAct($actId);
 	}
 	
 	sub relax {
 		my ($self) = @_;
 		
 		$self->{k}->relax();
+		$self->_save();
 		
 		return ();
-	}
-	
-	sub save {
-		my ($self) = @_;
-	
-		$self->{k}->save(path => "$self->{path}/Karma");
 	}
 	
 	sub remove {
 		my ($self, $actId) = @_;
+
 		(-e "$self->{path}/acts/$actId") or return (errorMessage => "Act $actId does not exist, cannot remove.");
-		# actId must also be in Karma to be able to remove it.
+		$self->{k}->remove($actId) or return (errorMessage => "Act $actId has already been removed, cannot remove.");
 		
-		# Oh, removal should definitely only be soft.
+		$self->_save();
 		
-		$self->{k}->remove($actId);
-		
-		# ??? what should this return ???  I think it's good for it to unconditionally spew, so that you can verify which act it removed ... but spewing is disorientating.
-		# well .. for them to have performed a removal, they should have just spewed? so no need to do so again, 
-		# just yield the actId so that they can once more check they entered the same thing as above.
-		return ();
+		return $self->_getAct($actId);
 	}
 	
+	# I want some type of searching functionality, so that I don't add duplicate words :|.
+	# ((should only search non-deleted acts))). Wait ... should it search deleted acts? Sigh ... recycling policies hurt my brain.
+	
+
 	sub edit {
 		my ($self, $actId) = @_;
 		(-e "$self->{path}/acts/$actId") or return (errorMessage => "Act $actId does not exist, cannot edit.");
+
+		return $self->_setAct();
+		# wait ... does karma even have an interface function to modify ttl? A: no! that makes my options fewer, and choices easier.
 		
-		$self->{slurpTo}->("$self->{path}/acts/$actId");
-		
-		return ();
+		# should I return a handler to change the lifetime .... mumble mumble, too many handlers spoils the soup ... but this will be the last one! Right? 
 	}
-	
-	# in general, don't go telling people their ttl unless they ask,
-	# and don't ask if their answer doesn't matter.
-	
 	
 	sub lookup {
 		my ($self, $actId) = @_;
 		(-e "$self->{path}/acts/$actId") or return (errorMessage => "Act $actId does not exist, cannot lookup.");
 		
-		$self->{spewFrom}->("$self->{path}/acts/$actId");
-		
-		
-		return (actId => $actId, lifetime => $self->{k}->lifetime($actId)); # caller can choose to ignore based on recycling policy.
-		# this is purely an interface function, 
-		
-		#return (errorMessage => undef); # a triple return code of emsg, ttl, id; leaves things to the caller ... which is somewhat what i want to do, wrt. inversion
-		                                # but is there any way to make it neat, or neater?
+		return $self->_getAct($actId);
 	}
-	
-	sub lifetime {
-		my ($self, $actId) = @_;
-		(-e "$self->{path}/acts/$actId") or return (errorMessage => "Act $actId does not exist, cannot check lifetime.");
-		
-		return (lifetime => self->{k}->lifetime($actId));
-	}
-	
-	
-	# sub lifetime ...
-	
-	# Do I also want a way to buff (or otherwise edit) ttl?
-	# I should have an option for KWrap to work w/ eternal.
 	
 }
 

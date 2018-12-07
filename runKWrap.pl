@@ -11,7 +11,6 @@ sub evaluate {
 	my ($kw, $command, @args) = @_;
 		$kw // die; 
 
-		# I need better aliases ... maybe? at least ttl.
 		my %aliases = (
 			push     => sub {$kw->push(@_)},
 			peek     => sub {$kw->peek(@_)},
@@ -23,7 +22,8 @@ sub evaluate {
 			lookup   => sub {$kw->lookup(@_)},
 		);
 	
-		$kw->save();
+		# saving needs to be done only after slurping has succeeded, otherwise we don't have atomicity.
+
 		$aliases{$command} //= sub {errorMessage => "'$command' is not a valid command."};
 		return $aliases{$command}->(@args);
 }
@@ -60,7 +60,16 @@ sub main {
 		
 		my @tokens = split(" ", $_);
 		my %result = evaluate($kw, @tokens);
-		print "$_ $result{$_}" for (keys %result);
+		
+		# this has random order currently ... should fix.
+		for (keys %result) {
+			if ($_ eq slurpHandle or $_ eq spewHandle) {
+				$result{$_}->();
+			} else {
+				print "$_ $result{$_}\n";
+			}
+		}
+		
 	}
 }
 
