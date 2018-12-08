@@ -52,7 +52,7 @@ sub main {
 		spewFrom => sub { system "vim -R $_[0]"; }
 	);
 	
-	print "\$ "; # I want to keep printing this, no?
+	print "\$ ";
 	while (<>) {
 		chomp $_;
 		
@@ -63,13 +63,13 @@ sub main {
 		
 		# this has random order currently ... should fix.
 		for (keys %result) {
-			if ($_ eq slurpHandle or $_ eq spewHandle) {
+			if ($_ eq "slurpHandle" or $_ eq "spewHandle") {
 				$result{$_}->();
 			} else {
 				print "$_ $result{$_}\n";
 			}
 		}
-		
+		print "\$ ";
 	}
 }
 

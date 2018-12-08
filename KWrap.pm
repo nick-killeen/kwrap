@@ -36,14 +36,14 @@ package KWrap {
 		
 		bless $self, $class;
 	
-		if ($self->{recycle} eq "eternal" or $self->{recycle} eq "destruct") {
+		if (defined $self->{recycle} and ($self->{recycle} eq "eternal" or $self->{recycle} eq "destruct")) {
 			$self->{defaultLifetime} //= 1;
 		}
 	
 		if (-e "$self->{path}/Karma") {
 			$self->{k}->load(path => "$self->{path}/Karma");
 		} else {
-			$self->{k}->_save();
+			$self->_save();
 		}
 	
 		mkdir "$self->{path}/acts";
@@ -69,8 +69,8 @@ package KWrap {
 	
 	sub _getAct {
 		my ($self, $actId) = @_;
-		
-		(-e "$self->{path}/acts/$actId") or die ("_getAct expects validity of actIDs, but was provided an actId that does not exist.");
+
+		-e "$self->{path}/acts/$actId" or die "_getAct expects validity of actIDs, but was provided an actId that does not exist.";
 		
 		return (
 			actId      => $actId,
@@ -82,7 +82,7 @@ package KWrap {
 	sub cycle {
 		my ($self) = @_;
 		
-		my $actId = $self->{k}->cycle(); # todo, handle undef case!
+		my $actId = $self->{k}->cycle() // return (error => "There are no acts in the cycle.");
 		$self->_save();
 		
 		return $self->_getAct($actId);
@@ -90,14 +90,16 @@ package KWrap {
 	
 	sub edit {
 		my ($self, $actId) = @_;
-		(-e "$self->{path}/acts/$actId") or return (error => "Act $actId does not exist, cannot edit.");
+		$actId // return (error => "No actId provided to edit.");
+		-e "$self->{path}/acts/$actId" or return (error => "Act $actId does not exist, cannot edit.");
 
-		return $self->_setAct();
+		return $self->_setAct($actId);
 	}
 	
 	sub lookup {
 		my ($self, $actId) = @_;
-		(-e "$self->{path}/acts/$actId") or return (error => "Act $actId does not exist, cannot lookup.");
+		$actId // return (error => "No actId provided to lookup.");
+		-e "$self->{path}/acts/$actId" or return (error => "Act $actId does not exist, cannot lookup.");
 		
 		return $self->_getAct($actId);
 	}
@@ -105,7 +107,7 @@ package KWrap {
 	sub peek {
 		my ($self) = @_;
 		
-		my $actId = $self->{k}->peek(); # todo, handle undef case!
+		my $actId = $self->{k}->peek() // return (error => "There are no acts in the cycle.");
 		$self->_save();
 		
 		return $self->_getAct($actId);
@@ -114,7 +116,7 @@ package KWrap {
 	sub prime {
 		my ($self) = @_;
 		
-		my $actId = $self->{k}->prime(); # todo, handle undef case!
+		my $actId = $self->{k}->prime() // return (error => "There are no acts in the cycle.");
 		$self->_save();
 		
 		return $self->_getAct($actId);
@@ -124,10 +126,13 @@ package KWrap {
 		my ($self, $lifetime) = @_;
 		$lifetime //= $self->{defaultLifetime};
 		
+		$lifetime // return (error => "No lifetime provided to push.");
+		$lifetime =~ /^\d+$/ and $lifetime > 0 or return (error => "Invalid lifetime '$lifetime'.");
+		
 		opendir my $dh, "$self->{path}/acts";
-		my @directories = <$dh>
-		closedir $fh;
-		my $actId = @directories;
+		my @contents = readdir $dh;
+		closedir $dh;
+		my $actId = @contents - 2; # - 2 to ignore the directories '.' and '..'
 		
 		$self->{k}->push($actId, $lifetime);
 	
@@ -145,13 +150,16 @@ package KWrap {
 	
 	sub remove {
 		my ($self, $actId) = @_;
-		(-e "$self->{path}/acts/$actId") or return (error => "Act $actId does not exist, cannot remove.");
+		$actId // return (error => "No actId provided to remove.");
+		-e "$self->{path}/acts/$actId" or return (error => "Act $actId does not exist, cannot remove.");
 		
-		$self->{k}->remove($actId)       or return (error => "Act $actId has already been removed, cannot remove.");
+		$self->{k}->remove($actId) or return (error => "Act $actId has already been removed, cannot remove.");
 		$self->_save();
 		
 		return $self->_getAct($actId);
 	}
+	
+	# sub search :: (self * str) -> [actIds]  ... rather, return searchResults => (1, 2, 3) or does this flatten itself? in which case do searchResults => [1, 2, 3]
 	
 	# I want some type of searching functionality, so that I don't add duplicate words :|.
 	# ((should only search non-deleted acts))). Wait ... should it search deleted acts? Sigh ... recycling policies hurt my brain.
@@ -160,11 +168,18 @@ package KWrap {
 
 	
 	# TODO List:
-	# - handle peeking, priming, cycling from an empty karma object.
-	# - don't die on malformed lifetime, or actId
+	# - lookup .  or remove ./ ETC die rather than warning. The directories indeed exist; but these are not valid actIds!
 	# - searching functionality.
-	
+	# - more unified searching functionality overall ... a _validator is probably the best way to go, but since we want it to return instead of dying, there will be a bit of overhead at each call.
+	# - default slurping and spewing one liners, or gobble from STDIN, STDOUT?
+	# - consolidate error messages into #defs (global constants, or constants of the package)\
+	# - change error message "there are no acts in the cycle" -- I am confused when I type > cycle; and I get back < error => There are no acts in the cycle.
 
+	# DONE list
+	# - don't die on malformed
+	#     - lifetime,  (X)
+	#     - actId      (X)
+	# - edit (X), push (X), remove (X), lookup (X) all warn and fail when no args are provided
 	
 }
 
