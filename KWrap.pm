@@ -8,7 +8,7 @@ use Data::Dumper;
 use Karma;
 
 # Public functions return hashes with some number of:
-# errorMessage,
+# error,
 # actId,
 # lifetime,
 # spewHandle,
@@ -18,13 +18,11 @@ package KWrap {
 	sub new {
 		my ($class, %args) = @_;
 		
-		# there must be no naming collisions with Karma
-		# TODO, handle eternal 5 5 5 5 5 5 5 5 5 5 5 lifetime
 		my $self = {
 			path            => "KWrap",
-			slurpTo         => sub { system "vim $_[0]" },   # :: path -> void (opens stdin port)
-			spewFrom        => sub { system "vim -R $_[0]" }, # :: path -> void (opens stdout port)
-			defaultLifetime => undef, # undef will cause complaints if no lifetime is provided (unless recycle policy is unfair)
+			slurpTo         => sub { system "vim $_[0]" },    # :: path -> void (opens stdin port to path)
+			spewFrom        => sub { system "vim -R $_[0]" }, # :: path -> void (opens stdout port to path)
+			defaultLifetime => undef # undef will cause complaints if no lifetime is provided (unless recycle policy isn't fair)
 		};
 
 		my %karmaArgs = %args;
@@ -53,39 +51,53 @@ package KWrap {
 		return $self;
 	}
 	
-	# this currently trusts the veracity of IDs ... feel free to die otherwise.
-	sub _getAct {
-		my ($self, $actId) = @_;
-		
-		return (
-			actId      => $actId,
-			lifetime   => $self->{k}->lifetime($actId),
-			spewHandle => sub { $self->{spewFrom}->("$self->{path}/acts/$actId") }
-		);
-		
-	}
-	
-	sub _setAct {
-		my ($self, $actId) = @_;
-		
-		return (
-			actId      => $actId,
-			lifetime   => $self->{k}->lifetime($actId),
-			slurpHandle => sub { $self->{slurpTo}->("$self->{path}/acts/$actId"); $self->_save(); } # slurping and saving must be done at once to achieve atomicity and synchronicity of KW and K
-		);
-	}
-	
 	sub _save {
 		my ($self) = @_;
 		
 		$self->{k}->save(path => "$self->{path}/Karma");
 	}
 	
+	sub _setAct {
+		my ($self, $actId) = @_;
+		
+		return (
+			actId       => $actId,
+			lifetime    => $self->{k}->lifetime($actId),
+			slurpHandle => sub { $self->{slurpTo}->("$self->{path}/acts/$actId"); $self->_save(); } # slurping and saving must be done at once to achieve atomicity and synchronicity of KW and K
+		);
+	}
+	
+	sub _getAct {
+		my ($self, $actId) = @_;
+		
+		(-e "$self->{path}/acts/$actId") or die ("_getAct expects validity of actIDs, but was provided an actId that does not exist.");
+		
+		return (
+			actId      => $actId,
+			lifetime   => $self->{k}->lifetime($actId),
+			spewHandle => sub { $self->{spewFrom}->("$self->{path}/acts/$actId") }
+		);
+	}
+	
 	sub cycle {
 		my ($self) = @_;
 		
-		my $actId = $self->{k}->cycle();
+		my $actId = $self->{k}->cycle(); # todo, handle undef case!
 		$self->_save();
+		
+		return $self->_getAct($actId);
+	}
+	
+	sub edit {
+		my ($self, $actId) = @_;
+		(-e "$self->{path}/acts/$actId") or return (error => "Act $actId does not exist, cannot edit.");
+
+		return $self->_setAct();
+	}
+	
+	sub lookup {
+		my ($self, $actId) = @_;
+		(-e "$self->{path}/acts/$actId") or return (error => "Act $actId does not exist, cannot lookup.");
 		
 		return $self->_getAct($actId);
 	}
@@ -93,16 +105,16 @@ package KWrap {
 	sub peek {
 		my ($self) = @_;
 		
-		my $actId = $self->{k}->peek();
+		my $actId = $self->{k}->peek(); # todo, handle undef case!
 		$self->_save();
 		
-		return $self->_getAct($actId)
+		return $self->_getAct($actId);
 	}
 	
 	sub prime {
 		my ($self) = @_;
 		
-		my $actId = $self->{k}->prime();
+		my $actId = $self->{k}->prime(); # todo, handle undef case!
 		$self->_save();
 		
 		return $self->_getAct($actId);
@@ -133,10 +145,9 @@ package KWrap {
 	
 	sub remove {
 		my ($self, $actId) = @_;
-
-		(-e "$self->{path}/acts/$actId") or return (errorMessage => "Act $actId does not exist, cannot remove.");
-		$self->{k}->remove($actId) or return (errorMessage => "Act $actId has already been removed, cannot remove.");
+		(-e "$self->{path}/acts/$actId") or return (error => "Act $actId does not exist, cannot remove.");
 		
+		$self->{k}->remove($actId)       or return (error => "Act $actId has already been removed, cannot remove.");
 		$self->_save();
 		
 		return $self->_getAct($actId);
@@ -146,34 +157,18 @@ package KWrap {
 	# ((should only search non-deleted acts))). Wait ... should it search deleted acts? Sigh ... recycling policies hurt my brain.
 	
 
-	sub edit {
-		my ($self, $actId) = @_;
-		(-e "$self->{path}/acts/$actId") or return (errorMessage => "Act $actId does not exist, cannot edit.");
 
-		return $self->_setAct();
-		# wait ... does karma even have an interface function to modify ttl? A: no! that makes my options fewer, and choices easier.
-		
-		# should I return a handler to change the lifetime .... mumble mumble, too many handlers spoils the soup ... but this will be the last one! Right? 
-	}
 	
-	sub lookup {
-		my ($self, $actId) = @_;
-		(-e "$self->{path}/acts/$actId") or return (errorMessage => "Act $actId does not exist, cannot lookup.");
-		
-		return $self->_getAct($actId);
-	}
+	# TODO List:
+	# - handle peeking, priming, cycling from an empty karma object.
+	# - don't die on malformed lifetime, or actId
+	# - searching functionality.
+	
+
 	
 }
 
-
-# lifetime is a separate thing from lookup.
-# ah, but entering lifetime when pushing -- to do that, i need to check recycling laws.
-
 1;
-
-# I might have to decouple lifetime
-# I might want to return IDs to the console rather than through vim ... myeh, idk.
-
 
 #sub new($class, %args)
 #sub cycle($self)
@@ -186,21 +181,7 @@ package KWrap {
 #sub relax($self)
 #sub remove($self, $actId)
 #sub save($self, %args)
-
-1;
 
 # it's a ridiculous thing to cycle without first priming if logging is going to be a part of the system.
 # A: it depends on the scope of the system, and atomicity of cycling. For "here's something to think about", which is achieved at a glance, cycle-cycle-cycle is a valid use case.
 
-
-#sub new($class, %args)
-#sub cycle($self)
-#sub length($self)
-#sub lifetime($self, $actId)
-#sub load($self, %args)
-#sub peek($self)
-#sub prime($self)
-#sub push($self, $actId, $lifetime)
-#sub relax($self)
-#sub remove($self, $actId)
-#sub save($self, %args)

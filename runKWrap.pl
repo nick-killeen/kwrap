@@ -24,7 +24,7 @@ sub evaluate {
 	
 		# saving needs to be done only after slurping has succeeded, otherwise we don't have atomicity.
 
-		$aliases{$command} //= sub {errorMessage => "'$command' is not a valid command."};
+		$aliases{$command} //= sub {error => "'$command' is not a valid command."};
 		return $aliases{$command}->(@args);
 }
 
