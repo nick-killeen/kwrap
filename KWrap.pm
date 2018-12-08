@@ -78,7 +78,7 @@ package KWrap {
 			spewHandle => sub { $self->{spewFrom}->("$self->{path}/acts/$actId") }
 		);
 	}
-	
+
 	sub cycle {
 		my ($self) = @_;
 		
@@ -91,6 +91,7 @@ package KWrap {
 	sub edit {
 		my ($self, $actId) = @_;
 		$actId // return (error => "No actId provided to edit.");
+		$actId =~ /^\d+$/ or return (error => "'$actId' is an invalid actId, cannot edit.");
 		-e "$self->{path}/acts/$actId" or return (error => "Act $actId does not exist, cannot edit.");
 
 		return $self->_setAct($actId);
@@ -99,6 +100,7 @@ package KWrap {
 	sub lookup {
 		my ($self, $actId) = @_;
 		$actId // return (error => "No actId provided to lookup.");
+		$actId =~ /^\d+$/ or return (error => "'$actId' is an invalid actId, cannot lookup.");
 		-e "$self->{path}/acts/$actId" or return (error => "Act $actId does not exist, cannot lookup.");
 		
 		return $self->_getAct($actId);
@@ -151,6 +153,7 @@ package KWrap {
 	sub remove {
 		my ($self, $actId) = @_;
 		$actId // return (error => "No actId provided to remove.");
+		$actId =~ /^\d+$/ or return (error => "'$actId' is an invalid actId, cannot remove.");
 		-e "$self->{path}/acts/$actId" or return (error => "Act $actId does not exist, cannot remove.");
 		
 		$self->{k}->remove($actId) or return (error => "Act $actId has already been removed, cannot remove.");
@@ -168,7 +171,6 @@ package KWrap {
 
 	
 	# TODO List:
-	# - lookup .  or remove ./ ETC die rather than warning. The directories indeed exist; but these are not valid actIds!
 	# - searching functionality.
 	# - more unified searching functionality overall ... a _validator is probably the best way to go, but since we want it to return instead of dying, there will be a bit of overhead at each call.
 	# - default slurping and spewing one liners, or gobble from STDIN, STDOUT?
@@ -176,6 +178,7 @@ package KWrap {
 	# - change error message "there are no acts in the cycle" -- I am confused when I type > cycle; and I get back < error => There are no acts in the cycle.
 
 	# DONE list
+	# - lookup .  or remove ./ ETC die rather than warning. The directories indeed exist; but these are not valid actIds!
 	# - don't die on malformed
 	#     - lifetime,  (X)
 	#     - actId      (X)
