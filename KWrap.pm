@@ -94,7 +94,7 @@ package KWrap {
 	sub cycle {
 		my ($self) = @_;
 		
-		my $actId = $self->{k}->cycle() // return (error => "There are no acts in the cycle.");
+		my $actId = $self->{k}->cycle() // return (error => "Nothing to cycle.");
 		$self->_save();
 		
 		return $self->_getAct($actId);
@@ -121,7 +121,7 @@ package KWrap {
 	sub peek {
 		my ($self) = @_;
 		
-		my $actId = $self->{k}->peek() // return (error => "There are no acts in the cycle.");
+		my $actId = $self->{k}->peek() // return (error => "Nothing to peek.");
 		$self->_save();
 		
 		return $self->_getAct($actId);
@@ -130,7 +130,7 @@ package KWrap {
 	sub prime {
 		my ($self) = @_;
 		
-		my $actId = $self->{k}->prime() // return (error => "There are no acts in the cycle.");
+		my $actId = $self->{k}->prime() // return (error => "Nothing to prime.");
 		$self->_save();
 		
 		return $self->_getAct($actId);
@@ -170,8 +170,6 @@ package KWrap {
 		return $self->_getAct($actId);
 	}
 	
-	# Searching may be incompatible with some types of slurping and spewing?
-	# We want case insensitivity, please. 
 	sub search {
 		my ($self, $substr) = @_;
 		$substr //= "";
@@ -187,24 +185,12 @@ package KWrap {
 		return (matches => \@matches);
 	}
 
-		
-		
-		
-
-	# sub search :: (self * str) -> [actIds]  ... rather, return searchResults => (1, 2, 3) or does this flatten itself? in which case do searchResults => [1, 2, 3]
-	
-	# I want some type of searching functionality, so that I don't add duplicate words :|.
-	# ((should only search non-deleted acts))). Wait ... should it search deleted acts? Sigh ... recycling policies hurt my brain.
-	
-
 
 	
 	# TODO List:
-	# - searching functionality.
 	# - more unified interfacing functionality overall ... a _validator is probably the best way to go, but since we want it to return instead of dying, there will be a bit of overhead at each call.
 	# - default slurping and spewing one liners, or gobble from STDIN, STDOUT?
 	# - consolidate error messages into #defs (global constants, or constants of the package)\
-	# - change error message "there are no acts in the cycle" -- I am confused when I type > cycle; and I get back < error => There are no acts in the cycle.
 
 	# DONE list
 	# - lookup .  or remove ./ ETC die rather than warning. The directories indeed exist; but these are not valid actIds!
@@ -212,6 +198,7 @@ package KWrap {
 	#     - lifetime,  (X)
 	#     - actId      (X)
 	# - edit (X), push (X), remove (X), lookup (X) all warn and fail when no args are provided
+	# - searching functionality.
 	
 }
 
