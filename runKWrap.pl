@@ -20,6 +20,7 @@ sub evaluate {
 			remove   => sub {$kw->remove(@_)},
 			edit     => sub {$kw->edit(@_)},
 			lookup   => sub {$kw->lookup(@_)},
+			search   => sub {$kw->search(@_)},
 		);
 	
 		# saving needs to be done only after slurping has succeeded, otherwise we don't have atomicity.
@@ -65,6 +66,8 @@ sub main {
 		for (keys %result) {
 			if ($_ eq "slurpHandle" or $_ eq "spewHandle") {
 				$result{$_}->();
+			} elsif ($_ eq "matches") {
+				print "$_\n" for (@{$result{$_}});
 			} else {
 				print "$_ $result{$_}\n";
 			}

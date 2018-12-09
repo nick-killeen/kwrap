@@ -51,6 +51,29 @@ package KWrap {
 		return $self;
 	}
 	
+	sub _allActIds {
+		my ($self) = @_;
+		
+		opendir my $dh, "$self->{path}/acts";
+		my @contents = readdir $dh;
+		@contents = grep {!/^\./} @contents; # ignore contents beginning with '.', including the '.' and '..' directories.
+		closedir $dh;
+		
+		return @contents;
+	}
+	
+	sub _getAct {
+		my ($self, $actId) = @_;
+
+		-e "$self->{path}/acts/$actId" or die "_getAct expects validity of actIDs, but was provided an actId that does not exist.";
+		
+		return (
+			actId      => $actId,
+			lifetime   => $self->{k}->lifetime($actId),
+			spewHandle => sub { $self->{spewFrom}->("$self->{path}/acts/$actId") }
+		);
+	}
+	
 	sub _save {
 		my ($self) = @_;
 		
@@ -67,17 +90,6 @@ package KWrap {
 		);
 	}
 	
-	sub _getAct {
-		my ($self, $actId) = @_;
-
-		-e "$self->{path}/acts/$actId" or die "_getAct expects validity of actIDs, but was provided an actId that does not exist.";
-		
-		return (
-			actId      => $actId,
-			lifetime   => $self->{k}->lifetime($actId),
-			spewHandle => sub { $self->{spewFrom}->("$self->{path}/acts/$actId") }
-		);
-	}
 
 	sub cycle {
 		my ($self) = @_;
@@ -127,14 +139,10 @@ package KWrap {
 	sub push {
 		my ($self, $lifetime) = @_;
 		$lifetime //= $self->{defaultLifetime};
-		
 		$lifetime // return (error => "No lifetime provided to push.");
 		$lifetime =~ /^\d+$/ and $lifetime > 0 or return (error => "Invalid lifetime '$lifetime'.");
 		
-		opendir my $dh, "$self->{path}/acts";
-		my @contents = readdir $dh;
-		closedir $dh;
-		my $actId = @contents - 2; # - 2 to ignore the directories '.' and '..'
+		my $actId = $self->_allActIds();
 		
 		$self->{k}->push($actId, $lifetime);
 	
@@ -162,6 +170,27 @@ package KWrap {
 		return $self->_getAct($actId);
 	}
 	
+	# Searching may be incompatible with some types of slurping and spewing?
+	# We want case insensitivity, please. 
+	sub search {
+		my ($self, $substr) = @_;
+		$substr //= "";
+				
+		my @matches = ();
+		for ($self->_allActIds()) {
+			open my $fh, "<", "$self->{path}/acts/$_" or die;
+			local $/ = undef;
+			CORE::push @matches, $_ if (index(lc <$fh>, lc $substr) != -1);
+			close $fh;
+		}
+		
+		return (matches => \@matches);
+	}
+
+		
+		
+		
+
 	# sub search :: (self * str) -> [actIds]  ... rather, return searchResults => (1, 2, 3) or does this flatten itself? in which case do searchResults => [1, 2, 3]
 	
 	# I want some type of searching functionality, so that I don't add duplicate words :|.
@@ -172,7 +201,7 @@ package KWrap {
 	
 	# TODO List:
 	# - searching functionality.
-	# - more unified searching functionality overall ... a _validator is probably the best way to go, but since we want it to return instead of dying, there will be a bit of overhead at each call.
+	# - more unified interfacing functionality overall ... a _validator is probably the best way to go, but since we want it to return instead of dying, there will be a bit of overhead at each call.
 	# - default slurping and spewing one liners, or gobble from STDIN, STDOUT?
 	# - consolidate error messages into #defs (global constants, or constants of the package)\
 	# - change error message "there are no acts in the cycle" -- I am confused when I type > cycle; and I get back < error => There are no acts in the cycle.
