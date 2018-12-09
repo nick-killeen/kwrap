@@ -184,38 +184,12 @@ package KWrap {
 		
 		return (matches => \@matches);
 	}
-
-
 	
 	# TODO List:
-	# - more unified interfacing functionality overall ... a _validator is probably the best way to go, but since we want it to return instead of dying, there will be a bit of overhead at each call.
 	# - default slurping and spewing one liners, or gobble from STDIN, STDOUT?
-	# - consolidate error messages into #defs (global constants, or constants of the package)\
-
-	# DONE list
-	# - lookup .  or remove ./ ETC die rather than warning. The directories indeed exist; but these are not valid actIds!
-	# - don't die on malformed
-	#     - lifetime,  (X)
-	#     - actId      (X)
-	# - edit (X), push (X), remove (X), lookup (X) all warn and fail when no args are provided
-	# - searching functionality.
-	
+	# - do i want multiple buckets to be a part of one KW? in that case, I need id prefixes ... wait, the parsing of which bucket based off these would be a part of runKW?
+	# - nice docs, acknowledge badnesses such aas error messages.
 }
 
 1;
-
-#sub new($class, %args)
-#sub cycle($self)
-#sub length($self)
-#sub lifetime($self, $actId)
-#sub load($self, %args)
-#sub peek($self)
-#sub prime($self)
-#sub push($self, $actId, $lifetime)
-#sub relax($self)
-#sub remove($self, $actId)
-#sub save($self, %args)
-
-# it's a ridiculous thing to cycle without first priming if logging is going to be a part of the system.
-# A: it depends on the scope of the system, and atomicity of cycling. For "here's something to think about", which is achieved at a glance, cycle-cycle-cycle is a valid use case.
 
