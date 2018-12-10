@@ -14,6 +14,10 @@ use Karma;
 # spewHandle,
 # slurpHandle
 
+sub even_here {
+	print "Here\n"
+}
+
 package KWrap {
 	sub new {
 		my ($class, %args) = @_;
@@ -21,19 +25,26 @@ package KWrap {
 		my $self = {
 			path => "KWrap",
 			
-			slurpTo => sub {
-				open my $fh, ">", $_[0];
-				while (<>) { # STDIN
+			slurpTo => sub { # :: str -> bool; writes to file path 'str'.
+				my $c = "";
+				
+				while (<>) {
 					chomp $_;
 					last if ($_ eq '');
-					print $fh "$_\n";
+					$c .= "$_\n";
 				}
-				close $fh;
+				
+				if ($c eq '') {	# or sig{INT} for windows only? how do i implement this?
+					return 0;
+				} else {
+					open my $fh, ">", $_[0];
+					print $fh $c;
+					close $fh;
+					return 1;
+				}
 			},
-			# wait, ctrl-c definitely closes the fh, but then it doesn't write Karma! isn't this broken?
-			# indeed, hitting ctrl-c doesn't add K to Karma, but it writes out an act!! 
 			
-			spewFrom => sub {
+			spewFrom => sub { # :: str -> void; wrtes from file path 'str' to world.
 				open my $fh, "<", $_[0];
 				print do { local $/ = undef; <$fh> };
 				close $fh;
@@ -41,9 +52,6 @@ package KWrap {
 			
 			defaultLifetime => undef # undef will cause complaints if no lifetime is provided (unless recycle policy isn't fair)
 		};
-		
-		# E. bug where pushing terminates ... I don't follow.
-		
 
 		my %karmaArgs = %args;
 		delete $karmaArgs{$_} for (keys %$self);
@@ -106,7 +114,7 @@ package KWrap {
 		return (
 			actId       => $actId,
 			lifetime    => $self->{k}->lifetime($actId),
-			slurpHandle => sub { $self->{slurpTo}->("$self->{path}/acts/$actId"); $self->_save(); } # slurping and saving must be done at once to achieve atomicity and synchronicity of KW and K
+			slurpHandle => sub { $self->{slurpTo}->("$self->{path}/acts/$actId") and $self->_save(); } # slurping and saving must be done at once to achieve atomicity and synchronicity of KW and K ... TD. comment about return code.
 		);
 	}
 	

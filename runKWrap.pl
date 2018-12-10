@@ -49,8 +49,9 @@ sub main {
 	mkdir "data";
 	my $kw = KWrap->new(
 		path     => "data", 
-		slurpTo  => sub { system "vim $_[0]"; },
-		spewFrom => sub { system "vim -R $_[0]"; }
+		#slurpTo  => sub { system "vim $_[0]"; 1 }, # this should return 0 if we write out an empty message (y).
+		#spewFrom => sub { system "vim -R $_[0]"; },
+		defaultLifetime => 5
 	);
 	
 	print "\$ ";
