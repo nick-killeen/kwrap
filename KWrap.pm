@@ -22,18 +22,16 @@ package KWrap {
 			path => "KWrap",
 			
 			slurpTo => sub {
-				my $c = "";
-				while (<>) {
+				open my $fh, ">", $_[0];
+				while (<>) { # STDIN
 					chomp $_;
 					last if ($_ eq '');
-					$c .= "$_\n";
+					print $fh "$_\n";
 				}
-
-				open my $fh, ">", $_[0];
-				print $fh $c;
 				close $fh;
 			},
-			
+			# wait, ctrl-c definitely closes the fh, but then it doesn't write Karma! isn't this broken?
+			# indeed, hitting ctrl-c doesn't add K to Karma, but it writes out an act!! 
 			
 			spewFrom => sub {
 				open my $fh, "<", $_[0];
