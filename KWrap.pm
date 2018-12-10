@@ -19,11 +19,33 @@ package KWrap {
 		my ($class, %args) = @_;
 		
 		my $self = {
-			path            => "KWrap",
-			slurpTo         => sub { system "vim $_[0]" },    # :: path -> void (opens stdin port to path)
-			spewFrom        => sub { system "vim -R $_[0]" }, # :: path -> void (opens stdout port to path)
+			path => "KWrap",
+			
+			slurpTo => sub {
+				my $c = "";
+				while (<>) {
+					chomp $_;
+					last if ($_ eq '');
+					$c .= "$_\n";
+				}
+
+				open my $fh, ">", $_[0];
+				print $fh $c;
+				close $fh;
+			},
+			
+			
+			spewFrom => sub {
+				open my $fh, "<", $_[0];
+				print do { local $/ = undef; <$fh> };
+				close $fh;
+			},
+			
 			defaultLifetime => undef # undef will cause complaints if no lifetime is provided (unless recycle policy isn't fair)
 		};
+		
+		# E. bug where pushing terminates ... I don't follow.
+		
 
 		my %karmaArgs = %args;
 		delete $karmaArgs{$_} for (keys %$self);
