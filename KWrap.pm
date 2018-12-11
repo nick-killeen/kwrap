@@ -14,10 +14,6 @@ use Karma;
 # spewHandle,
 # slurpHandle
 
-sub even_here {
-	print "Here\n"
-}
-
 package KWrap {
 	sub new {
 		my ($class, %args) = @_;
@@ -27,6 +23,14 @@ package KWrap {
 			
 			slurpTo => sub { # :: str -> bool; writes to file path 'str'.
 				my $c = "";
+			
+				our $x = 1;
+			
+				local %SIG;
+				my $path = $_[0];
+				$SIG{'INT'} = sub {
+					$x = 0;
+				};
 				
 				while (<>) {
 					chomp $_;
@@ -34,7 +38,11 @@ package KWrap {
 					$c .= "$_\n";
 				}
 				
-				if ($c eq '') {	# or sig{INT} for windows only? how do i implement this?
+				print "$x";
+				sleep 1;
+				print "$x";
+				
+				if ($c eq '') {
 					return 0;
 				} else {
 					open my $fh, ">", $_[0];
@@ -104,7 +112,7 @@ package KWrap {
 	
 	sub _save {
 		my ($self) = @_;
-		
+	
 		$self->{k}->save(path => "$self->{path}/Karma");
 	}
 	

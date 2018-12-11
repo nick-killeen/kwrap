@@ -63,8 +63,7 @@ sub main {
 		my @tokens = split(" ", $_);
 		my %result = evaluate($kw, @tokens);
 		
-		# this has random order currently ... should fix.
-		for (keys %result) {
+		for (sort keys %result) {
 			if ($_ eq "slurpHandle" or $_ eq "spewHandle") {
 				$result{$_}->();
 			} elsif ($_ eq "matches") {
