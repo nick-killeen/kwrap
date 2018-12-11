@@ -29,6 +29,20 @@ sub evaluate {
 		return $aliases{$command}->(@args);
 }
 
+sub display {
+	my (%result) = @_;
+	
+	for (sort keys %result) {
+		if ($_ eq "slurpHandle" or $_ eq "spewHandle") {
+			$result{$_}->();
+		} elsif ($_ eq "matches") {
+			print "$_\n" for (@{$result{$_}});
+		} else {
+			print "$_ $result{$_}\n";
+		}
+	}
+}
+
 # usually
 # > peek     -- What next?
 # > cycle    -- I did that
@@ -45,7 +59,6 @@ sub evaluate {
 
 
 sub main {
-
 	mkdir "data";
 	my $kw = KWrap->new(
 		path     => "data", 
@@ -62,16 +75,7 @@ sub main {
 		
 		my @tokens = split(" ", $_);
 		my %result = evaluate($kw, @tokens);
-		
-		for (sort keys %result) {
-			if ($_ eq "slurpHandle" or $_ eq "spewHandle") {
-				$result{$_}->();
-			} elsif ($_ eq "matches") {
-				print "$_\n" for (@{$result{$_}});
-			} else {
-				print "$_ $result{$_}\n";
-			}
-		}
+		display(%result);
 		print "\$ ";
 	}
 }
