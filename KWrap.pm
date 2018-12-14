@@ -21,36 +21,14 @@ package KWrap {
 		my $self = {
 			path => "KWrap",
 			
-			slurpTo => sub { # :: str -> bool; writes to file path 'str'.
+			slurpTo => sub { # :: str -> bool; writes from world to file path 'str'. 0 return code aborts push.
 				my $c = "";
-			
-				our $x = 1;
-			
-				local %SIG;
-				my $path = $_[0];
-				$SIG{'INT'} = sub {
-					$x = 0;
-				};
-				
-				
-				
-				
-				
-				
-				
-				
-				
-				
 				
 				while (<>) {
 					chomp $_;
 					last if ($_ eq '');
 					$c .= "$_\n";
 				}
-				
-				print "$x";
-				sleep 1;
-				print "$x";
 				
 				if ($c eq '') {
 					return 0;
@@ -62,7 +40,7 @@ package KWrap {
 				}
 			},
 			
-			spewFrom => sub { # :: str -> void; wrtes from file path 'str' to world.
+			spewFrom => sub { # :: str -> void; writes from file path 'str' to world.
 				open my $fh, "<", $_[0];
 				print do { local $/ = undef; <$fh> };
 				close $fh;
