@@ -94,7 +94,7 @@ package KWrap {
 		return (
 			actId      => $actId,
 			lifetime   => $self->{k}->lifetime($actId),
-			spewHandle => sub { $self->{spewFrom}->("$self->{path}/acts/$actId") }
+			spewHandle => sub { $self->{spewFrom}->("$self->{path}/acts/$actId", @_) } # note that we feed in additional arguments
 		);
 	}
 	
@@ -110,7 +110,7 @@ package KWrap {
 		return (
 			actId       => $actId,
 			lifetime    => $self->{k}->lifetime($actId),
-			slurpHandle => sub { $self->{slurpTo}->("$self->{path}/acts/$actId") and $self->_save(); } # slurping and saving must be done at once to achieve atomicity and synchronicity of KW and K ... TD. comment about return code.
+			slurpHandle => sub { $self->{slurpTo}->("$self->{path}/acts/$actId", @_) and $self->_save(); } # slurping and saving must be done at once to achieve atomicity and synchronicity of KW and K ... TD. comment about return code.
 		);
 	}
 	
