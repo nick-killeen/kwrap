@@ -102,6 +102,8 @@ package KWrap {
 		my ($self) = @_;
 	
 		$self->{k}->save(path => "$self->{path}/Karma");
+		
+		return 1;
 	}
 	
 	sub _setAct {
