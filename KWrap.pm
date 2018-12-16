@@ -202,7 +202,7 @@ package KWrap {
 	
 	sub remove {
 		my ($self, $actId) = @_;
-		$self->_existingActId($actId) or return (error => $KWrap::CODE::REMOVE_BAD_ID);
+		$self->_actIdExists($actId) or return (error => $KWrap::CODE::REMOVE_BAD_ID);
  		
 		$self->{k}->remove($actId) or return (error => $KWrap::CODE::REMOVE_ALREADY_REMOVED);
 		$self->_save();
