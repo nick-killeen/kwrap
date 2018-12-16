@@ -86,6 +86,13 @@ package KWrap {
 		return $self;
 	}
 	
+
+	sub _actIdExists {
+		my ($self, $actId) = @_;
+		
+		return (defined $actId and $actId =~ /^\d+$/ and -e "$self->{path}/acts/$actId");
+	}
+	
 	sub _allActIds {
 		my ($self) = @_;
 		
@@ -129,12 +136,6 @@ package KWrap {
 			# no, not just this -- everything should be linear. this is also enforcable to some extent
 	}
 
-	sub _existingActId {
-		my ($self, $actId) = @_;
-		
-		return (defined $actId and $actId =~ /^\d+$/ and -e "$self->{path}/acts/$actId");
-	}
-	
 	sub cycle {
 		my ($self) = @_;
 		
@@ -147,14 +148,14 @@ package KWrap {
 	
 	sub edit {
 		my ($self, $actId) = @_;
-		$self->_existingActId($actId) or return (error => $KWrap::CODE::EDIT_BAD_ID);
+		$self->_actIdExists($actId) or return (error => $KWrap::CODE::EDIT_BAD_ID);
 
 		return $self->_setAct($actId);
 	}
 	
 	sub lookup {
 		my ($self, $actId) = @_;
-		$self->_existingActId($actId) or return (error => $KWrap::CODE::LOOKUP_BAD_ID);
+		$self->_actIdExists($actId) or return (error => $KWrap::CODE::LOOKUP_BAD_ID);
 		
 		return $self->_getAct($actId);
 	}
@@ -225,9 +226,9 @@ package KWrap {
 	}
 	
 	# TODO List:
-	# - default slurping and spewing one liners, or gobble from STDIN, STDOUT?
-	# - do i want multiple buckets to be a part of one KW? in that case, I need id prefixes ... wait, the parsing of which bucket based off these would be a part of runKW?
-	# - nice docs, acknowledge badnesses such aas error messages.
+	# - consider how runKW can be modified to include multiple buckets by resolving ids.
+	# - docs
+	# - tests
 }
 
 1;
