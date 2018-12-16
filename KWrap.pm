@@ -14,10 +14,21 @@ use Karma;
 # spewHandle,
 # slurpHandle
 
+package KWrap::CODE {
+	our $CYCLE_ON_EMPTY         = "Nothing to cycle.";
+	our $EDIT_BAD_ID            = "Cannot edit with invalid actId.";
+	our $LOOKUP_BAD_ID          = "Cannot lookup with invalid actId.";
+	our $PEEK_ON_EMPTY          = "Nothing to peek.";
+	our $PRIME_ON_EMPTY         = "Nothing to prime.";
+	our $PUSH_BAD_LIFETIME      = "Cannot push with invalid lifetime.";
+	our $REMOVE_ALREADY_REMOVED = "Cannot remove act that has already been removed.";
+	our $REMOVE_BAD_ID          = "Cannot remove with invalid actId.";
+}; 
+
 package KWrap {
 	sub new {
 		my ($class, %args) = @_;
-		
+	
 		my $self = {
 			path => "KWrap",
 			
@@ -103,7 +114,7 @@ package KWrap {
 	
 		$self->{k}->save(path => "$self->{path}/Karma");
 		
-		return 1;
+		return 1; # return 1 so that slurpHandle returns success state ... TODO comment
 	}
 	
 	sub _setAct {
@@ -113,33 +124,37 @@ package KWrap {
 			actId       => $actId,
 			lifetime    => $self->{k}->lifetime($actId),
 			slurpHandle => sub { $self->{slurpTo}->("$self->{path}/acts/$actId", @_) and $self->_save(); } # slurping and saving must be done at once to achieve atomicity and synchronicity of KW and K ... TD. comment about return code.
-		);
+		);  # every time a slurpHandle is returned, it must be called immediately (before any other state-changing interface function), or never; otherwise strange unintended behaviour will present itself.
+			# it isn't difficult to enforce this, but it adds unnecessary complexity where I think it is very difficult to unintentionally abuse this promise of linearity.
+			# no, not just this -- everything should be linear. this is also enforcable to some extent
+	}
+
+	sub _existingActId {
+		my ($self, $actId) = @_;
+		
+		return (defined $actId and $actId =~ /^\d+$/ and -e "$self->{path}/acts/$actId");
 	}
 	
-
 	sub cycle {
 		my ($self) = @_;
 		
-		my $actId = $self->{k}->cycle() // return (error => "Nothing to cycle.");
+		my $actId = $self->{k}->cycle() // return (error => $KWrap::CODE::CYCLE_ON_EMPTY);
 		$self->_save();
 		
 		return $self->_getAct($actId);
 	}
 	
+	
 	sub edit {
 		my ($self, $actId) = @_;
-		$actId // return (error => "No actId provided to edit.");
-		$actId =~ /^\d+$/ or return (error => "'$actId' is an invalid actId, cannot edit.");
-		-e "$self->{path}/acts/$actId" or return (error => "Act $actId does not exist, cannot edit.");
+		$self->_existingActId($actId) or return (error => $KWrap::CODE::EDIT_BAD_ID);
 
 		return $self->_setAct($actId);
 	}
 	
 	sub lookup {
 		my ($self, $actId) = @_;
-		$actId // return (error => "No actId provided to lookup.");
-		$actId =~ /^\d+$/ or return (error => "'$actId' is an invalid actId, cannot lookup.");
-		-e "$self->{path}/acts/$actId" or return (error => "Act $actId does not exist, cannot lookup.");
+		$self->_existingActId($actId) or return (error => $KWrap::CODE::LOOKUP_BAD_ID);
 		
 		return $self->_getAct($actId);
 	}
@@ -147,7 +162,7 @@ package KWrap {
 	sub peek {
 		my ($self) = @_;
 		
-		my $actId = $self->{k}->peek() // return (error => "Nothing to peek.");
+		my $actId = $self->{k}->peek() // return (error => $KWrap::CODE::PEEK_ON_EMPTY);
 		$self->_save();
 		
 		return $self->_getAct($actId);
@@ -156,7 +171,7 @@ package KWrap {
 	sub prime {
 		my ($self) = @_;
 		
-		my $actId = $self->{k}->prime() // return (error => "Nothing to prime.");
+		my $actId = $self->{k}->prime() // return (error => $KWrap::CODE::PRIME_ON_EMPTY);
 		$self->_save();
 		
 		return $self->_getAct($actId);
@@ -165,8 +180,8 @@ package KWrap {
 	sub push {
 		my ($self, $lifetime) = @_;
 		$lifetime //= $self->{defaultLifetime};
-		$lifetime // return (error => "No lifetime provided to push.");
-		$lifetime =~ /^\d+$/ and $lifetime > 0 or return (error => "Invalid lifetime '$lifetime'.");
+		defined $lifetime and $lifetime =~ /^\d+$/ and $lifetime > 0 or return (error => $KWrap::CODE::PUSH_BAD_LIFETIME);
+		
 		
 		my $actId = $self->_allActIds();
 		
@@ -186,11 +201,9 @@ package KWrap {
 	
 	sub remove {
 		my ($self, $actId) = @_;
-		$actId // return (error => "No actId provided to remove.");
-		$actId =~ /^\d+$/ or return (error => "'$actId' is an invalid actId, cannot remove.");
-		-e "$self->{path}/acts/$actId" or return (error => "Act $actId does not exist, cannot remove.");
-		
-		$self->{k}->remove($actId) or return (error => "Act $actId has already been removed, cannot remove.");
+		$self->_existingActId($actId) or return (error => $KWrap::CODE::REMOVE_BAD_ID);
+ 		
+		$self->{k}->remove($actId) or return (error => $KWrap::CODE::REMOVE_ALREADY_REMOVED);
 		$self->_save();
 		
 		return $self->_getAct($actId);
