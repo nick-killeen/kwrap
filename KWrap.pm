@@ -30,6 +30,8 @@ package KWrap {
 		my ($class, %args) = @_;
 	
 		my $self = {
+			defaultLifetime => undef, # undef will cause complaints if no lifetime is provided (unless recycle policy isn't fair)
+		
 			path => "KWrap",
 			
 			slurpTo => sub { # :: str -> bool; writes from world to file path 'str'. 0 return code aborts push.
@@ -55,9 +57,7 @@ package KWrap {
 				open my $fh, "<", $_[0];
 				print do { local $/ = undef; <$fh> };
 				close $fh;
-			},
-			
-			defaultLifetime => undef # undef will cause complaints if no lifetime is provided (unless recycle policy isn't fair)
+			}
 		};
 
 		my %karmaArgs = %args;
@@ -121,21 +121,9 @@ package KWrap {
 	
 		$self->{k}->save(path => "$self->{path}/Karma");
 		
-		return 1; # return 1 so that slurpHandle returns success state ... TODO comment
+		return 1;
 	}
 	
-	sub _setAct {
-		my ($self, $actId) = @_;
-		
-		return (
-			actId       => $actId,
-			lifetime    => $self->{k}->lifetime($actId),
-			slurpHandle => sub { $self->{slurpTo}->("$self->{path}/acts/$actId", @_) and $self->_save(); } # slurping and saving must be done at once to achieve atomicity and synchronicity of KW and K ... TD. comment about return code.
-		);  # every time a slurpHandle is returned, it must be called immediately (before any other state-changing interface function), or never; otherwise strange unintended behaviour will present itself.
-			# it isn't difficult to enforce this, but it adds unnecessary complexity where I think it is very difficult to unintentionally abuse this promise of linearity.
-			# no, not just this -- everything should be linear. this is also enforcable to some extent
-	}
-
 	sub cycle {
 		my ($self) = @_;
 		
@@ -150,7 +138,11 @@ package KWrap {
 		my ($self, $actId) = @_;
 		$self->_actIdExists($actId) or return (error => $KWrap::CODE::EDIT_BAD_ID);
 
-		return $self->_setAct($actId);
+		return (
+			actId       => $actId,
+			lifetime    => $self->{k}->lifetime($actId),
+			slurpHandle => sub { $self->{slurpTo}->("$self->{path}/acts/$actId", @_) } 
+		);
 	}
 	
 	sub lookup {
@@ -185,10 +177,15 @@ package KWrap {
 		
 		
 		my $actId = $self->_allActIds();
-		
-		$self->{k}->push($actId, $lifetime);
 	
-		return $self->_setAct($actId);
+		return (
+			actId       => $actId,
+			lifetime    => $lifetime,
+			slurpHandle => sub { $self->{slurpTo}->("$self->{path}/acts/$actId", @_) and $self->{k}->push($actId, $lifetime) and $self->_save(); } # slurping and pushing must be done at once to achieve atomicity and synchronicity of KW and K ... TD. comment about return code.
+		);  # every time a slurpHandle is returned, it must be called immediately (before any other state-changing interface function), or never; otherwise strange unintended behaviour will present itself.
+			# it isn't difficult to enforce this, but it adds unnecessary complexity where I think it is very difficult to unintentionally abuse this promise of linearity.
+			# no, not just this -- everything should be linear. this is also enforcable to some extent
+		
 	}
 	
 	sub relax {
