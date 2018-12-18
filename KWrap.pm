@@ -12,7 +12,8 @@ use Karma;
 # actId,
 # lifetime,
 # spewHandle,
-# slurpHandle
+# slurpHandle,
+# matches
 
 package KWrap::CODE {
 	our $CYCLE_ON_EMPTY         = "Nothing to cycle.";
@@ -207,6 +208,7 @@ package KWrap {
 		return $self->_getAct($actId);
 	}
 	
+	# search must return matches in ascending order.
 	sub search {
 		my ($self, $substr) = @_;
 		$substr //= "";
