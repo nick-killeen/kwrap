@@ -35,9 +35,9 @@ sub testKWrap {
 		spewFrom => \&testSpewFrom
 	);
 	
-	my %o; # enforce lineraity
+	my %o;
 	
-	# Test peek, prime, and cycling an empty karma yeilds no results.
+	# Test peek, prime, and cycling an empty Karma yeilds no results.
 	{
 		%o = $kw->peek();
 		$o{error} eq $KWrap::CODE::PEEK_ON_EMPTY or die;
@@ -50,7 +50,7 @@ sub testKWrap {
 	}
 	
 	
-	# Test edit, lookup, and remove all gracefully fail in when karma is empty.
+	# Test edit, lookup, and remove all gracefully fail in when Karma is empty.
 	{
 		%o = $kw->edit(0);
 		$o{error} eq $KWrap::CODE::EDIT_BAD_ID or die;
@@ -119,7 +119,9 @@ sub testKWrap {
 		$o{spewHandle}->() eq "One two three four\n" or die;
 	}
 		
-	# Test removing sets lifetime to 0, does not prevent edits and lookups, but disallows duplicate removals, and causes the act to no longer be in the karma cycle.
+	# Test removing sets lifetime to 0, does not prevent edits and lookups, but
+	# disallows duplicate removals, and causes the Act to no longer be in the
+	# Karmic cycle.
 	{
 		%o = $kw->peek();
 		$o{actId} eq 0 or die;
@@ -161,7 +163,8 @@ sub testKWrap {
 		$o{slurpHandle}->("A1", 1) or die;
 	}
 	
-	# Test recycle => "eternal" | "destruct" provide a default defaultLifetime of 1, and that these constructor arguments trickle down to Karma.
+	# Test recycle => "eternal" | "destruct" provide a default defaultLifetime
+	# of 1, and that these constructor arguments trickle down to Karma.
 	{
 		my $kw = KWrap->new(
 			path => $TEST_DIRECTORY,
@@ -197,7 +200,8 @@ sub testKWrap {
 		
 	}
 	
-	# Test that not slurping or returning a 0 code from a slurp will cause no changes to the system state.
+	# Test that not slurping or returning a 0 code from a slurp will cause no
+	# changes to the system state.
 	{
 		%o = $kw->push(5);
 		$o{actId} eq 4 or die;
