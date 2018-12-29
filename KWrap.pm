@@ -62,23 +62,42 @@ package KWrap {
 			# latter case, a return code of 0 will abort the push.
 			# 
 			# The default method reads lines from STDIN until it encounters a
-			# a\n^D\n or \n^Z\n on a Windows System, or \n^D on Linux.
+			# \n^D\n or \n^Z\n on a Windows System, or \n^D on Linux. Sending
+			# just these characters (an empty message) will abort the operation.
 			#
-			# Ctrl-C aborts on Linux, but on Windows .... TODO, either explain the difficulties or solve them.
+			# On Linux systems, signalling ^C during a slurpHandle's execution
+			# will abort successfully. However, I could not find a way to
+			# consistently reproduce this behaviour on Windows, where SIGINT
+			# seems to behave in mystical ways, at the whims of the scheduler. A
+			# minimal reproduction of this issue can be achieved by sending ^C
+			# to the following Perl script:
+			#
+			#              $SIG{'INT'} = sub { print "A"; exit; };
+			#              <>;
+			#              sleep 1 if (rand() > 0.5);
+			#              print "B";
+			#
+			# This will always produce A on Linux, but will intractably give one
+			# of A or B on Windows, depending on the weather. If your scheduler
+			# is truly malevolent, BA may be given. Be forewarned, these things
+			# come in threes.
+			# 
+			# It is strongly recommended that you do not rely on this default
+			# implementation.
 			slurpTo => sub {
-				my $c = "";
+				my $slurped = "";
 				
 				while (<>) {
 					chomp $_;
 					last if ($_ eq '');
-					$c .= "$_\n";
+					$slurped .= "$_\n";
 				}
 				
-				if ($c eq '') {
+				if ($slurped eq '') {
 					return 0;
 				} else {
 					open my $fh, ">", $_[0];
-					print $fh $c;
+					print $fh $slurped;
 					close $fh;
 					return 1;
 				}
