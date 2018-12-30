@@ -179,6 +179,11 @@ package KWrap {
 		);
 	}
 	
+	sub _lifetimeOk {
+		my ($self, $lifetime) = @_;
+		return (defined $lifetime and $lifetime =~ /^\d+$/ and $lifetime > 0);
+	}
+	
 	sub _save {
 		my ($self) = @_;
 	
@@ -248,7 +253,7 @@ package KWrap {
 	sub push {
 		my ($self, $lifetime) = @_;
 		$lifetime //= $self->{defaultLifetime};
-		defined $lifetime and $lifetime =~ /^\d+$/ and $lifetime > 0
+		$self->_lifetimeOk($lifetime)
 			or return (error => $KWrap::CODE::BAD_LIFETIME);
 		
 		
