@@ -31,14 +31,10 @@ use Data::Dumper;
 use Karma;
 
 package KWrap::CODE {
-	our $CYCLE_ON_EMPTY         = "Nothing to cycle.";
-	our $EDIT_BAD_ID            = "Cannot edit with invalid actId.";
-	our $LOOKUP_BAD_ID          = "Cannot lookup with invalid actId.";
-	our $PEEK_ON_EMPTY          = "Nothing to peek.";
-	our $PRIME_ON_EMPTY         = "Nothing to prime.";
-	our $PUSH_BAD_LIFETIME      = "Cannot push with invalid lifetime.";
+	our $BAD_ID                 = "Invalid actId.";
+	our $BAD_LIFETIME           = "Invalid lifetime.";
+	our $EMPTY_CYCLE            = "The cycle is empty.";
 	our $REMOVE_ALREADY_REMOVED = "Cannot remove Act no longer in the cycle.";
-	our $REMOVE_BAD_ID          = "Cannot remove with invalid actId.";
 }; 
 
 package KWrap {
@@ -195,7 +191,7 @@ package KWrap {
 		my ($self) = @_;
 		
 		my $actId = $self->{k}->cycle()
-			// return (error => $KWrap::CODE::CYCLE_ON_EMPTY);
+			// return (error => $KWrap::CODE::EMPTY_CYCLE);
 		$self->_save();
 		
 		return $self->_getAct($actId);
@@ -205,7 +201,7 @@ package KWrap {
 	sub edit {
 		my ($self, $actId) = @_;
 		$self->_actIdExists($actId)
-			or return (error => $KWrap::CODE::EDIT_BAD_ID);
+			or return (error => $KWrap::CODE::BAD_ID);
 
 		return (
 			actId       => $actId,
@@ -219,7 +215,7 @@ package KWrap {
 	sub lookup {
 		my ($self, $actId) = @_;
 		$self->_actIdExists($actId)
-			or return (error => $KWrap::CODE::LOOKUP_BAD_ID);
+			or return (error => $KWrap::CODE::BAD_ID);
 		
 		return $self->_getAct($actId);
 	}
@@ -228,7 +224,7 @@ package KWrap {
 		my ($self) = @_;
 		
 		my $actId = $self->{k}->peek()
-			// return (error => $KWrap::CODE::PEEK_ON_EMPTY);
+			// return (error => $KWrap::CODE::EMPTY_CYCLE);
 		$self->_save();
 		
 		return $self->_getAct($actId);
@@ -238,7 +234,7 @@ package KWrap {
 		my ($self) = @_;
 		
 		my $actId = $self->{k}->prime()
-			// return (error => $KWrap::CODE::PRIME_ON_EMPTY);
+			// return (error => $KWrap::CODE::EMPTY_CYCLE);
 		$self->_save();
 		
 		return $self->_getAct($actId);
@@ -253,7 +249,7 @@ package KWrap {
 		my ($self, $lifetime) = @_;
 		$lifetime //= $self->{defaultLifetime};
 		defined $lifetime and $lifetime =~ /^\d+$/ and $lifetime > 0
-			or return (error => $KWrap::CODE::PUSH_BAD_LIFETIME);
+			or return (error => $KWrap::CODE::BAD_LIFETIME);
 		
 		
 		my $actId = $self->_allActIds();
@@ -282,7 +278,7 @@ package KWrap {
 	sub remove {
 		my ($self, $actId) = @_;
 		$self->_actIdExists($actId)
-			or return(error => $KWrap::CODE::REMOVE_BAD_ID);
+			or return(error => $KWrap::CODE::BAD_ID);
  		
 		$self->{k}->remove($actId)
 			or return (error => $KWrap::CODE::REMOVE_ALREADY_REMOVED);

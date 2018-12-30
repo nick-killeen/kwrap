@@ -40,48 +40,48 @@ sub testKWrap {
 	# Test peek, prime, and cycling an empty Karma yeilds no results.
 	{
 		%o = $kw->peek();
-		$o{error} eq $KWrap::CODE::PEEK_ON_EMPTY or die;
+		$o{error} eq $KWrap::CODE::EMPTY_CYCLE or die;
 		
 		%o = $kw->prime();
-		$o{error} eq $KWrap::CODE::PRIME_ON_EMPTY or die;
+		$o{error} eq $KWrap::CODE::EMPTY_CYCLE or die;
 		
 		%o = $kw->cycle();
-		$o{error} eq $KWrap::CODE::CYCLE_ON_EMPTY or die;
+		$o{error} eq $KWrap::CODE::EMPTY_CYCLE or die;
 	}
 	
 	
 	# Test edit, lookup, and remove all gracefully fail in when Karma is empty.
 	{
 		%o = $kw->edit(0);
-		$o{error} eq $KWrap::CODE::EDIT_BAD_ID or die;
+		$o{error} eq $KWrap::CODE::BAD_ID or die;
 		
 		%o = $kw->lookup(0);
-		$o{error} eq $KWrap::CODE::LOOKUP_BAD_ID or die;
+		$o{error} eq $KWrap::CODE::BAD_ID or die;
 		
 		%o = $kw->remove(0);
-		$o{error} eq $KWrap::CODE::REMOVE_BAD_ID or die;
+		$o{error} eq $KWrap::CODE::BAD_ID or die;
 	}
 	
 	# Test edit, lookup, and remove all fail when fed malformed IDs.
 	{
 		%o = $kw->edit(-1);
-		$o{error} eq $KWrap::CODE::EDIT_BAD_ID or die;
+		$o{error} eq $KWrap::CODE::BAD_ID or die;
 		
 		%o = $kw->lookup('.');
-		$o{error} eq $KWrap::CODE::LOOKUP_BAD_ID or die;
+		$o{error} eq $KWrap::CODE::BAD_ID or die;
 		
 		%o = $kw->remove(undef);
-		$o{error} eq $KWrap::CODE::REMOVE_BAD_ID or die;
+		$o{error} eq $KWrap::CODE::BAD_ID or die;
 	}
 	
 	# Test pushing with bad lifetimes.
 	{
 		%o = $kw->push('bad');
-		$o{error} eq $KWrap::CODE::PUSH_BAD_LIFETIME or die;
+		$o{error} eq $KWrap::CODE::BAD_LIFETIME or die;
 		%o = $kw->push(-5);
-		$o{error} eq $KWrap::CODE::PUSH_BAD_LIFETIME or die;
+		$o{error} eq $KWrap::CODE::BAD_LIFETIME or die;
 		%o = $kw->push(undef);
-		$o{error} eq $KWrap::CODE::PUSH_BAD_LIFETIME or die;
+		$o{error} eq $KWrap::CODE::BAD_LIFETIME or die;
 	}
 	
 	# Test successful push and lookup.
@@ -142,7 +142,7 @@ sub testKWrap {
 		$o{spewHandle}->() eq "123456\n" or die;
 		
 		%o = $kw->peek();
-		$o{error} eq $KWrap::CODE::PEEK_ON_EMPTY or die;
+		$o{error} eq $KWrap::CODE::EMPTY_CYCLE or die;
 		
 		%o = $kw->remove(0); 
 		$o{error} eq $KWrap::CODE::REMOVE_ALREADY_REMOVED or die;
@@ -207,7 +207,7 @@ sub testKWrap {
 		$o{actId} eq 4 or die;
 		
 		%o = $kw->lookup(4);
-		$o{error} eq $KWrap::CODE::LOOKUP_BAD_ID or die;
+		$o{error} eq $KWrap::CODE::BAD_ID or die;
 
 		%o = $kw->push(5);
 		$o{actId} eq 4 or die;
@@ -216,7 +216,7 @@ sub testKWrap {
 		%o = $kw->remove(3);
 		
 		%o = $kw->peek();
-		$o{error} eq $KWrap::CODE::PEEK_ON_EMPTY or die;
+		$o{error} eq $KWrap::CODE::EMPTY_CYCLE or die;
 	}
 	
 	# Test searching.
