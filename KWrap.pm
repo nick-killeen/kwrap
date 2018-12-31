@@ -28,7 +28,7 @@ use warnings;
 use strict;
 
 use Data::Dumper;
-use Karma;
+use Karma 0.02;
 
 package KWrap::CODE {
 	our $BAD_ID                 = "Invalid actId.";
