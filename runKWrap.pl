@@ -8,15 +8,16 @@ sub evaluate {
 		$kw // die; 
 
 		my %aliases = (
-			push     => sub {$kw->push(@_)},
-			peek     => sub {$kw->peek(@_)},
-			prime    => sub {$kw->prime(@_)},
-			cycle    => sub {$kw->cycle(@_)},
-			relax    => sub {$kw->relax(@_)},
-			remove   => sub {$kw->remove(@_)},
-			edit     => sub {$kw->edit(@_)},
-			lookup   => sub {$kw->lookup(@_)},
-			search   => sub {$kw->search(@_)},
+			push   => sub {$kw->push(@_)},
+			peek   => sub {$kw->peek(@_)},
+			prime  => sub {$kw->prime(@_)},
+			cycle  => sub {$kw->cycle(@_)},
+			relax  => sub {$kw->relax(@_)},
+			remove => sub {$kw->remove(@_)},
+			edit   => sub {$kw->edit(@_)},
+			lookup => sub {$kw->lookup(@_)},
+			search => sub {$kw->search(@_)},
+			tweak  => sub {$kw->tweakLifetime(@_)},
 		);
 
 		$aliases{$command} //= sub {error => "'$command' is not a valid command."};

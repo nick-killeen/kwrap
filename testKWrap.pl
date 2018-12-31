@@ -262,6 +262,53 @@ sub testKWrap {
 		
 	}
 	
+	# Test tweakLifetime.
+	{
+		my $kw = KWrap->new(
+			path => $TEST_DIRECTORY,
+			slurpTo  => \&testSlurpTo,
+			spewFrom => \&testSpewFrom
+		);
+		
+		# Test increasing of lifetime.
+		%o = $kw->tweakLifetime(0, 105);
+		not defined $o{error} or die;
+
+		%o = $kw->lookup(0);
+		$o{lifetime} eq 105 or die;
+		 
+		# Test decreasing.
+		%o = $kw->tweakLifetime(0, 1);
+		not defined $o{error} or die;
+		
+		%o = $kw->lookup(0);
+		$o{lifetime} eq 1 or die;
+		 
+		# Test bad arguments
+		%o = $kw->tweakLifetime(10, 10);
+		$o{error} eq $KWrap::CODE::BAD_ID or die;
+		
+		%o = $kw->tweakLifetime(0, 0);
+		$o{error} eq $KWrap::CODE::BAD_LIFETIME or die;
+		
+		%o = $kw->tweakLifetime(0, "bad");
+		$o{error} eq $KWrap::CODE::BAD_LIFETIME or die;
+		
+		# Test that increasing lifetime of an Act with already 0 lifetime
+		# re-adds it to the cycle in a natural way.
+		%o = $kw->cycle();
+		%o = $kw->cycle();
+		%o = $kw->cycle();
+		$o{error} eq $KWrap::CODE::EMPTY_CYCLE or die;
+		
+		%o = $kw->tweakLifetime(0, 1);
+		%o = $kw->cycle();
+		$o{actId} eq 0 or die;
+		
+		%o = $kw->cycle();
+		$o{error} eq $KWrap::CODE::EMPTY_CYCLE or die;
+	}
+	
 	rmtree $TEST_DIRECTORY;
 	print "All tests passed!";
 }

@@ -306,6 +306,23 @@ package KWrap {
 		
 		return (matches => \@matches);
 	}
+	
+	# Adjust the lifetime of an already existing Act. If the Act's lifetime has
+	# already hit 0, and so it is no longer in the cycle, re-add it.
+	sub tweakLifetime {
+		my ($self, $actId, $lifetime) = @_;
+		$self->_actIdExists($actId)
+			or return(error => $KWrap::CODE::BAD_ID);
+		$self->_lifetimeOk($lifetime)
+			or return (error => $KWrap::CODE::BAD_LIFETIME);
+			
+		my $stillInCycle = $self->{k}->editLifetime($actId, $lifetime);
+		$stillInCycle or $self->{k}->push($actId, $lifetime);
+		
+		$self->_save();
+			
+		return ();
+	}
 }
 
 1;
