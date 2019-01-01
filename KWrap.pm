@@ -82,7 +82,7 @@ package KWrap {
 			# implementation.
 			slurpTo => sub {
 				my $slurped = "";
-				
+				local $_;
 				while (<>) {
 					chomp $_;
 					last if ($_ eq '');
