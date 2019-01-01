@@ -101,13 +101,16 @@ package KWrap {
 			
 			# The 'spewFrom' subroutine provides a method by which an Act can be
 			# read from storage; it takes in a file path as an argument, and
-			# echoes the contents of this file to the user.
+			# echoes the contents of this file to the user. Returns 1 to indicate
+			# success.
 			#
 			# The default method prints the files contents directly to STDOUT.
 			spewFrom => sub {
 				open my $fh, "<", $_[0];
 				print do { local $/ = undef; <$fh> };
 				close $fh;
+				
+				return 1;
 			}
 		};
 
@@ -174,7 +177,7 @@ package KWrap {
 			actId      => $actId,
 			lifetime   => $self->{k}->lifetime($actId),
 			spewHandle => sub {
-				$self->{spewFrom}->("$self->{path}/acts/$actId", @_);
+				return $self->{spewFrom}->("$self->{path}/acts/$actId", @_);
 			}
 		);
 	}
@@ -212,7 +215,7 @@ package KWrap {
 			actId       => $actId,
 			lifetime    => $self->{k}->lifetime($actId),
 			slurpHandle => sub {
-				$self->{slurpTo}->("$self->{path}/acts/$actId", @_);
+				return $self->{slurpTo}->("$self->{path}/acts/$actId", @_);
 			} 
 		);
 	}
