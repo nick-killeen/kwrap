@@ -30,7 +30,7 @@ sub testKWrap {
 	rmtree $TEST_DIRECTORY;
 	mkdir $TEST_DIRECTORY;
 	my $kw = KWrap->new(
-		path => $TEST_DIRECTORY,
+		path     => $TEST_DIRECTORY,
 		slurpTo  => \&testSlurpTo,
 		spewFrom => \&testSpewFrom
 	);
@@ -152,9 +152,9 @@ sub testKWrap {
 	{
 		my $kw = KWrap->new(
 			defaultLifetime => 5,
-			path => $TEST_DIRECTORY,
-			slurpTo  => \&testSlurpTo,
-			spewFrom => \&testSpewFrom
+			path            => $TEST_DIRECTORY,
+			slurpTo         => \&testSlurpTo,
+			spewFrom        => \&testSpewFrom
 		);
 	
 		%o = $kw->push();
@@ -167,8 +167,8 @@ sub testKWrap {
 	# of 1, and that these constructor arguments trickle down to Karma.
 	{
 		my $kw = KWrap->new(
-			path => $TEST_DIRECTORY,
-			recycle => "eternal",
+			path     => $TEST_DIRECTORY,
+			recycle  => "eternal",
 			slurpTo  => \&testSlurpTo,
 			spewFrom => \&testSpewFrom
 		);
@@ -184,8 +184,8 @@ sub testKWrap {
 		$o{lifetime} eq 5 or die;
 		
 		$kw = KWrap->new(
-			path => $TEST_DIRECTORY,
-			recycle => "destruct",
+			path     => $TEST_DIRECTORY,
+			recycle  => "destruct",
 			slurpTo  => \&testSlurpTo,
 			spewFrom => \&testSpewFrom
 		);
@@ -265,7 +265,7 @@ sub testKWrap {
 	# Test tweakLifetime.
 	{
 		my $kw = KWrap->new(
-			path => $TEST_DIRECTORY,
+			path     => $TEST_DIRECTORY,
 			slurpTo  => \&testSlurpTo,
 			spewFrom => \&testSpewFrom
 		);
