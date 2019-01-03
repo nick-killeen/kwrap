@@ -3,20 +3,32 @@ use strict;
 
 use KWrap;
 
+sub concatInto {
+	my ($handle) = @_;
+	
+	return sub {
+		my ($kw, @args) = @_;
+		my $argsConcat = join(" ", @args);
+		return $handle->($kw, $argsConcat);
+	
+	};
+}
+
 sub resolveAlias {
 	my ($alias) = @_;
 	my %commands = (
 		# alias => [method, bLog, filters],
-		cycle  => [\&KWrap::cycle,         1, [qw()]         ],
-		edit   => [\&KWrap::edit,          0, [qw()]         ],
-		lookup => [\&KWrap::lookup,        0, [qw(actId)]    ],
-		peek   => [\&KWrap::peek,          0, [qw()]         ],
-		prime  => [\&KWrap::prime,         0, [qw()]         ],
-		push   => [\&KWrap::push,          1, [qw(lifetime)] ],
-		relax  => [\&KWrap::relax,         0, [qw()]         ],
-		remove => [\&KWrap::remove,        1, [qw()]         ],
-		search => [\&KWrap::search,        0, [qw()]         ],
-		tweak  => [\&KWrap::tweakLifetime, 1, [qw()]         ],
+		cycle  => [\&KWrap::cycle,         1, [qw()]],
+		edit   => [\&KWrap::edit,          0, [qw(actId lifetime)]],
+		lookup => [\&KWrap::lookup,        0, [qw(actId)]],
+		peek   => [\&KWrap::peek,          0, [qw()]],
+		prime  => [\&KWrap::prime,         0, [qw()]],
+		push   => [\&KWrap::push,          1, [qw(lifetime)]],
+		relax  => [\&KWrap::relax,         0, [qw()]],
+		remove => [\&KWrap::remove,        1, [qw(actId lifetime spewHandle)]],
+		search => [concatInto(\&KWrap::search),
+		                                   0, [qw()]],
+		tweak  => [\&KWrap::tweakLifetime, 1, [qw()]],
 	);
 	return $commands{$alias} // [sub {
 		error => "'$alias' does not reference a valid command."
