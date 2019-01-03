@@ -83,7 +83,7 @@ package KWrap {
 			slurpTo => sub {
 				my $slurped = "";
 				local $_;
-				while (<>) {
+				while (<STDIN>) {
 					chomp $_;
 					last if ($_ eq '');
 					$slurped .= "$_\n";
