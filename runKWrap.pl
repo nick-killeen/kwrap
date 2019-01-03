@@ -7,76 +7,98 @@ my $CONSOLE_INPUT_SYMBOL = "\$ ";
 my $CONSOLE_OUTPUT_SYMBOL = "| ";
 my $KWRAP_PATH = "data";
 
-sub concatInto {
-	my ($handle) = @_;
+sub applyFilter {
+	my ($filter, %result) = @_;
+	my %filteredResult = %result;
+	delete $filteredResult{$_} for (@$filter);
+	return %filteredResult;
+}
+
+sub containsError {
+	my (%displayedResult) = @_;
+	my $bError = defined $displayedResult{error};
+	return $bError;
+}
+
+sub display {
+	my (%filteredResult) = @_;
 	
-	return sub {
-		my ($kw, @args) = @_;
-		my $argsConcat = join(" ", @args);
-		return $handle->($kw, $argsConcat);
+	my %displayedResult = %filteredResult;
+	for (sort keys %filteredResult) {
+		if ($_ eq "slurpHandle" or $_ eq "spewHandle") {
+			# Run the callback functions, and replace the function handle with
+			# its success code for logging purposes.
+			$displayedResult{$_} = $filteredResult{$_}->();
+		} elsif ($_ eq "matches") {
+			print "${CONSOLE_OUTPUT_SYMBOL}$_\n" for (@{$filteredResult{$_}});
+		} else {
+			print "${CONSOLE_OUTPUT_SYMBOL}$_ $filteredResult{$_}\n";
+		}
+	}
+
+	return %displayedResult;
+}
+
+sub logResult {
+	my ($commandStr, %displayedResult) = @_; 
+	open my $fh, ">>", "$KWRAP_PATH/log";
+	local $" = " ";
+	print $fh "> $commandStr\n";
+	print $fh "< $_ => $displayedResult{$_}\n" for (sort keys %displayedResult);
+	close $fh;
+	return ();
+}
+
+sub parseArgs {
+	my ($argStr, $nArgs) = @_;
+	return "" if ($nArgs < 0); # TODO "cycle 1 2 3 4" is equivalent to "cycle", but gets logged as "cycle 1 2 3 4" ... nArgs is off by 1
+	return $argStr if ($nArgs == 0);
+	my ($arg, $argStrRest) = $argStr =~ /^([^ ]*) *(.*)$/;
+	my @args = ($arg, parseArgs($argStrRest, $nArgs - 1));
+	return @args;
+}
+
+sub parseCommand {
+	my ($commandStr) = @_;
+	my ($command, $argStr) = $commandStr =~ /^([^ ]*) *(.*)$/;
+	return ($command, $argStr);
+}
+
+sub evaluate {
+	my ($kw, $commandStr) = @_;
 	
-	};
+	my ($alias, $argStr) = parseCommand($commandStr);
+	my $command = resolveAlias($alias);
+	my ($method, $nArgs, $bLog, $filter) = @$command;
+	my @args = parseArgs($argStr, $nArgs - 1); # TODO HACK -1
+	my %result = $method->($kw, @args); 
+	my %filteredResult = applyFilter($filter, %result);
+	my %displayedResult = display(%filteredResult);
+	if ($bLog and not containsError(%displayedResult)) {
+		logResult($commandStr, %displayedResult);
+	}
 }
 
 sub resolveAlias {
 	my ($alias) = @_;
 	my %commands = (
-		# alias => [method, bLog, filters],
-		cycle  => [\&KWrap::cycle,         1, [qw()]],
-		edit   => [\&KWrap::edit,          0, [qw(actId lifetime)]],
-		lookup => [\&KWrap::lookup,        0, [qw(actId)]],
-		peek   => [\&KWrap::peek,          0, [qw()]],
-		prime  => [\&KWrap::prime,         0, [qw()]],
-		push   => [\&KWrap::push,          1, [qw(lifetime)]],
-		relax  => [\&KWrap::relax,         0, [qw()]],
-		remove => [\&KWrap::remove,        1, [qw(actId lifetime spewHandle)]],
-		search => [concatInto(\&KWrap::search),
-		                                   0, [qw()]],
-		tweak  => [\&KWrap::tweakLifetime, 1, [qw()]],
+		# alias => [method, nArgs, bLog, filters],
+		cycle  => [\&KWrap::cycle,         0, 1, [qw()]],
+		edit   => [\&KWrap::edit,          1, 0, [qw(actId lifetime)]],
+		lookup => [\&KWrap::lookup,        1, 0, [qw(actId)]],
+		peek   => [\&KWrap::peek,          0, 0, [qw()]],
+		prime  => [\&KWrap::prime,         0, 0, [qw()]],
+		push   => [\&KWrap::push,          1, 1, [qw(lifetime)]],
+		relax  => [\&KWrap::relax,         0, 0, [qw()]],
+		remove => [\&KWrap::remove,        1, 1, [qw(actId lifetime spewHandle)]],
+		search => [\&KWrap::search,        1, 0, [qw()]],
+		tweak  => [\&KWrap::tweakLifetime, 2, 1, [qw()]],
 	);
 	return $commands{$alias} // [sub {
 		error => "'$alias' does not reference a valid command."
-	}, 0, [qw()]];
+	}, 0, 0, [qw()]];
 }
 
-sub evaluate {
-	my ($kw, $alias, @args) = @_;
-	$kw // die; 
-	
-	# Resolve the the alias to get an executable command (plus logging and
-	# filtering information).
-	my $command = resolveAlias($alias);
-	my ($method, $bLog, $filters) = @$command;
-
-	# Run the command.
-	my %result = $method->($kw, @args);
-	
-	# Apply filters.
-	delete $result{$_} for (@$filters);
-	
-	# Print the result to the console, additionally running callback functions
-	# to allow the reading and writing of acts.
-	for (sort keys %result) {
-		if ($_ eq "slurpHandle" or $_ eq "spewHandle") {
-			# Run the callback functions, and replace the function handle with
-			# its success code for logging purposes.
-			$result{$_} = $result{$_}->();
-		} elsif ($_ eq "matches") {
-			print "${CONSOLE_OUTPUT_SYMBOL}$_\n" for (@{$result{$_}});
-		} else {
-			print "${CONSOLE_OUTPUT_SYMBOL}$_ $result{$_}\n";
-		}
-	}
-
-	# Log the input and output (if there weren't any errors).
-	if ($bLog and not defined $result{error}) {
-		open my $fh, ">>", "$KWRAP_PATH/log";
-		local $" = " ";
-		print $fh "> $alias @args\n";
-		print $fh "< $_ => $result{$_}\n" for (sort keys %result);
-		close $fh;
-	}
-}
 
 
 sub main {
@@ -95,11 +117,9 @@ sub main {
 	print $CONSOLE_INPUT_SYMBOL;
 	while (<STDIN>) {
 		chomp $_;
-		
 		return if $_ eq "";
-		
-		my @tokens = split(" ", $_);
-		evaluate($kw, @tokens);
+
+		evaluate($kw, $_);
 		print $CONSOLE_INPUT_SYMBOL;
 	}
 }
