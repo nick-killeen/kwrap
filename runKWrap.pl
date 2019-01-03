@@ -3,6 +3,10 @@ use strict;
 
 use KWrap;
 
+my $CONSOLE_INPUT_SYMBOL = "\$ ";
+my $CONSOLE_OUTPUT_SYMBOL = "| ";
+my $KWRAP_PATH = "data";
+
 sub concatInto {
 	my ($handle) = @_;
 	
@@ -58,15 +62,15 @@ sub evaluate {
 			# its success code for logging purposes.
 			$result{$_} = $result{$_}->();
 		} elsif ($_ eq "matches") {
-			print "$_\n" for (@{$result{$_}});
+			print "${CONSOLE_OUTPUT_SYMBOL}$_\n" for (@{$result{$_}});
 		} else {
-			print "$_ $result{$_}\n";
+			print "${CONSOLE_OUTPUT_SYMBOL}$_ $result{$_}\n";
 		}
 	}
 
 	# Log the input and output (if there weren't any errors).
 	if ($bLog and not defined $result{error}) {
-		open my $fh, ">>", "data/log";
+		open my $fh, ">>", "$KWRAP_PATH/log";
 		local $" = " ";
 		print $fh "> $alias @args\n";
 		print $fh "< $_ => $result{$_}\n" for (sort keys %result);
@@ -76,23 +80,27 @@ sub evaluate {
 
 
 sub main {
-	mkdir "data";
+	our $CONSOLE_INPUT_SYMBOL  = shift @_ // $CONSOLE_INPUT_SYMBOL;
+	our $CONSOLE_OUTPUT_SYMBOL = shift @_ // $CONSOLE_OUTPUT_SYMBOL;
+	our $KWRAP_PATH            = shift @_ // $KWRAP_PATH;
+
+	mkdir $KWRAP_PATH;
 	my $kw = KWrap->new(
-		path     => "data", 
+		path     => $KWRAP_PATH, 
 		# slurpTo  => sub { system "vim $_[0]"; return -e $_[0] }, 
 		# spewFrom => sub { system "vim -R $_[0]"; return 1},
 		defaultLifetime => 5
 	);
 	
-	print "\$ ";
-	while (<>) {
+	print $CONSOLE_INPUT_SYMBOL;
+	while (<STDIN>) {
 		chomp $_;
 		
 		return if $_ eq "";
 		
 		my @tokens = split(" ", $_);
 		evaluate($kw, @tokens);
-		print "\$ ";
+		print $CONSOLE_INPUT_SYMBOL;
 	}
 }
 
