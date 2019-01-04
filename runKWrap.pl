@@ -3,9 +3,9 @@ use strict;
 
 use KWrap;
 
-my $CONSOLE_INPUT_SYMBOL = "\$ ";
-my $CONSOLE_OUTPUT_SYMBOL = "| ";
-my $KWRAP_PATH = "data";
+our $CONSOLE_INPUT_SYMBOL = "\$ ";
+our $CONSOLE_OUTPUT_SYMBOL = "| ";
+our $KWRAP_PATH = "data";
 
 sub applyFilter {
 	my ($filter, %result) = @_;
@@ -108,7 +108,7 @@ sub main {
 	our $CONSOLE_INPUT_SYMBOL  = shift @_ // $CONSOLE_INPUT_SYMBOL;
 	our $CONSOLE_OUTPUT_SYMBOL = shift @_ // $CONSOLE_OUTPUT_SYMBOL;
 	our $KWRAP_PATH            = shift @_ // $KWRAP_PATH;
-
+	
 	mkdir $KWRAP_PATH;
 	my $kw = KWrap->new(
 		path     => $KWRAP_PATH,
