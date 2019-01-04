@@ -215,7 +215,7 @@ package KWrap {
 		my ($self, $actId) = @_;
 		$self->_actIdExists($actId) or return (
 			error => $KWrap::CODE::BAD_ID,
-			errorInfo => "'$actId' is an invalid actId."
+			errorInfo => "'$actId' is not an existing actId."
 		);
 
 		return (
