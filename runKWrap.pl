@@ -21,7 +21,7 @@ sub containsError {
 }
 
 sub display {
-	my (%filteredResult) = @_;
+	my ($alias, %filteredResult) = @_;
 	
 	my %displayedResult = %filteredResult;
 	for (sort keys %filteredResult) {
@@ -40,10 +40,10 @@ sub display {
 }
 
 sub logResult {
-	my ($commandStr, %displayedResult) = @_; 
+	my ($alias, $args, %displayedResult) = @_; 
 	open my $fh, ">>", "$KWRAP_PATH/log";
 	local $" = " ";
-	print $fh "> $commandStr\n";
+	print $fh "> $alias @$args\n";
 	print $fh "< $_ => $displayedResult{$_}\n" for (sort keys %displayedResult);
 	close $fh;
 	return ();
@@ -51,8 +51,8 @@ sub logResult {
 
 sub parseArgs {
 	my ($argStr, $nArgs) = @_;
-	return "" if ($nArgs < 0); # TODO "cycle 1 2 3 4" is equivalent to "cycle", but gets logged as "cycle 1 2 3 4" ... nArgs is off by 1
-	return $argStr if ($nArgs == 0);
+	return () if ($nArgs == 0);
+	return $argStr if ($nArgs == 1);
 	my ($arg, $argStrRest) = $argStr =~ /^([^ ]*) *(.*)$/;
 	my @args = ($arg, parseArgs($argStrRest, $nArgs - 1));
 	return @args;
@@ -70,12 +70,12 @@ sub evaluate {
 	my ($alias, $argStr) = parseCommand($commandStr);
 	my $command = resolveAlias($alias);
 	my ($method, $nArgs, $bLog, $filter) = @$command;
-	my @args = parseArgs($argStr, $nArgs - 1); # TODO HACK -1
+	my @args = parseArgs($argStr, $nArgs);
 	my %result = $method->($kw, @args); 
 	my %filteredResult = applyFilter($filter, %result);
-	my %displayedResult = display(%filteredResult);
+	my %displayedResult = display($alias, %filteredResult);
 	if ($bLog and not containsError(%displayedResult)) {
-		logResult($commandStr, %displayedResult);
+		logResult($alias, \@args, %displayedResult);
 	}
 }
 
@@ -108,7 +108,7 @@ sub main {
 
 	mkdir $KWRAP_PATH;
 	my $kw = KWrap->new(
-		path     => $KWRAP_PATH, 
+		path     => $KWRAP_PATH,
 		# slurpTo  => sub { system "vim $_[0]"; return -e $_[0] }, 
 		# spewFrom => sub { system "vim -R $_[0]"; return 1},
 		defaultLifetime => 5
