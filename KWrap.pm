@@ -8,7 +8,11 @@
 # - error:       A code or message indicating that a request was not fulfilled
 #                in the way that might have been expected by the caller;
 #                all error values are defined in KWrap::CODE.
-#
+# 
+# - errorInfo:   Additional and optional information about what error has
+#                occurred, aiming to help the user infer what specifically went
+#                wrong -- what value had caused things to break.
+# 
 # - lifetime:    The lifetime of the requested Act. Is 0 if the Act is no longer
 #                a part of the Karmic cycle.
 #
@@ -198,8 +202,9 @@ package KWrap {
 	sub cycle {
 		my ($self) = @_;
 		
-		my $actId = $self->{k}->cycle()
-			// return (error => $KWrap::CODE::EMPTY_CYCLE);
+		my $actId = $self->{k}->cycle() // return (
+			error => $KWrap::CODE::EMPTY_CYCLE,
+		);
 		$self->_save();
 		
 		return $self->_getAct($actId);
@@ -208,8 +213,10 @@ package KWrap {
 	
 	sub edit {
 		my ($self, $actId) = @_;
-		$self->_actIdExists($actId)
-			or return (error => $KWrap::CODE::BAD_ID);
+		$self->_actIdExists($actId) or return (
+			error => $KWrap::CODE::BAD_ID,
+			errorInfo => "'$actId' is an invalid actId."
+		);
 
 		return (
 			actId       => $actId,
@@ -222,8 +229,10 @@ package KWrap {
 	
 	sub lookup {
 		my ($self, $actId) = @_;
-		$self->_actIdExists($actId)
-			or return (error => $KWrap::CODE::BAD_ID);
+		$self->_actIdExists($actId) or return (
+			error => $KWrap::CODE::BAD_ID,
+			errorInfo => "'$actId' is an invalid actId."
+		);
 		
 		return $self->_getAct($actId);
 	}
@@ -231,8 +240,9 @@ package KWrap {
 	sub peek {
 		my ($self) = @_;
 		
-		my $actId = $self->{k}->peek()
-			// return (error => $KWrap::CODE::EMPTY_CYCLE);
+		my $actId = $self->{k}->peek() // return (
+			error => $KWrap::CODE::EMPTY_CYCLE
+		);
 		$self->_save();
 		
 		return $self->_getAct($actId);
@@ -241,8 +251,9 @@ package KWrap {
 	sub prime {
 		my ($self) = @_;
 		
-		my $actId = $self->{k}->prime()
-			// return (error => $KWrap::CODE::EMPTY_CYCLE);
+		my $actId = $self->{k}->prime() // return (
+			error => $KWrap::CODE::EMPTY_CYCLE
+		);
 		$self->_save();
 		
 		return $self->_getAct($actId);
@@ -256,8 +267,10 @@ package KWrap {
 	sub push {
 		my ($self, $lifetime) = @_;
 		$lifetime //= $self->{defaultLifetime};
-		$self->_lifetimeOk($lifetime)
-			or return (error => $KWrap::CODE::BAD_LIFETIME);
+		$self->_lifetimeOk($lifetime) or return (
+			error => $KWrap::CODE::BAD_LIFETIME,
+			errorInfo => "'$lifetime' is an invalid lifetime."
+		);
 		
 		
 		my $actId = $self->_allActIds();
@@ -285,11 +298,14 @@ package KWrap {
 	# It can still be edited and looked up.
 	sub remove {
 		my ($self, $actId) = @_;
-		$self->_actIdExists($actId)
-			or return(error => $KWrap::CODE::BAD_ID);
+		$self->_actIdExists($actId) or return (
+			error => $KWrap::CODE::BAD_ID,
+			errorInfo => "'$actId' isn't an actId that exists."
+		);
  		
-		$self->{k}->remove($actId)
-			or return (error => $KWrap::CODE::REMOVE_ALREADY_REMOVED);
+		$self->{k}->remove($actId) or return (
+			error => $KWrap::CODE::REMOVE_ALREADY_REMOVED
+		);
 		$self->_save();
 		
 		return $self->_getAct($actId);
@@ -314,10 +330,14 @@ package KWrap {
 	# already hit 0, and so it is no longer in the cycle, re-add it.
 	sub tweakLifetime {
 		my ($self, $actId, $lifetime) = @_;
-		$self->_actIdExists($actId)
-			or return(error => $KWrap::CODE::BAD_ID);
-		$self->_lifetimeOk($lifetime)
-			or return (error => $KWrap::CODE::BAD_LIFETIME);
+		$self->_actIdExists($actId) or return (
+			error => $KWrap::CODE::BAD_ID,
+			errorInfo => "'$actId' is an invalid actId."
+		);
+		$self->_lifetimeOk($lifetime) or return (
+			error => $KWrap::CODE::BAD_LIFETIME,
+			errorInfo => "'$lifetime' is an invalid lifetime."
+		);
 			
 		my $stillInCycle = $self->{k}->editLifetime($actId, $lifetime);
 		$stillInCycle or $self->{k}->push($actId, $lifetime);
