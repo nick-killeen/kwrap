@@ -28,7 +28,10 @@ sub display {
 		if ($_ eq "slurpHandle" or $_ eq "spewHandle") {
 			# Run the callback functions, and replace the function handle with
 			# its success code for logging purposes.
-			$displayedResult{$_} = $filteredResult{$_}->();
+			$displayedResult{$_} = $filteredResult{$_}->($alias);
+			# By passing the alias into the callback function, we can design 
+			# KWrap's methods slurpTo and spewFrom to exhibit different
+			# behaviour for different aliases.
 		} elsif ($_ eq "matches") {
 			print "${CONSOLE_OUTPUT_SYMBOL}$_\n" for (@{$filteredResult{$_}});
 		} else {
