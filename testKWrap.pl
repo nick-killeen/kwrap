@@ -70,7 +70,7 @@ sub testKWrap {
 		%o = $kw->lookup('.');
 		$o{error} eq $KWrap::CODE::BAD_ID or die;
 		
-		%o = $kw->remove(undef);
+		%o = $kw->remove(9001);
 		$o{error} eq $KWrap::CODE::BAD_ID or die;
 	}
 	
@@ -80,7 +80,7 @@ sub testKWrap {
 		$o{error} eq $KWrap::CODE::BAD_LIFETIME or die;
 		%o = $kw->push(-5);
 		$o{error} eq $KWrap::CODE::BAD_LIFETIME or die;
-		%o = $kw->push(undef);
+		%o = $kw->push(0);
 		$o{error} eq $KWrap::CODE::BAD_LIFETIME or die;
 	}
 	
@@ -221,7 +221,7 @@ sub testKWrap {
 	
 	# Test searching.
 	{
-		%o = $kw->search(undef);
+		%o = $kw->search("");
 		shift @{$o{matches}} == 0 or die;
 		shift @{$o{matches}} == 1 or die;
 		shift @{$o{matches}} == 2 or die;
