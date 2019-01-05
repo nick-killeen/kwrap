@@ -137,6 +137,13 @@ package KWrap {
 			$self->{defaultLifetime} //= 1;
 		}
 	
+		# Make sure that the default lifetime, if provided, is valid.
+		if (defined $self->{defaultLifetime}) {
+			if (not $self->_lifetimeOk($self->{defaultLifetime})) {
+				die "Invalid default lifetime '$self->{defaultLifetime}'";
+			}
+		}
+	
 		if (-e "$self->{path}/Karma") {
 			$self->{k}->load(path => "$self->{path}/Karma");
 		} else {
@@ -266,12 +273,14 @@ package KWrap {
 	# - The returned slurpHandle will only be called only once, or not at all.
 	sub push {
 		my ($self, $lifetime) = @_;
-		$lifetime //= $self->{defaultLifetime};
+		if ($lifetime eq "" and defined $self->{defaultLifetime}) {
+			$lifetime = $self->{defaultLifetime};
+		}
+		
 		$self->_lifetimeOk($lifetime) or return (
 			error => $KWrap::CODE::BAD_LIFETIME,
 			errorInfo => "'$lifetime' is an invalid lifetime."
 		);
-		
 		
 		my $actId = $self->_allActIds();
 	
