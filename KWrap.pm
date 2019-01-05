@@ -332,6 +332,9 @@ package KWrap {
 			close $fh;
 		}
 		
+		# Sort numerically (default is alphabetically).
+		@matches = sort {$a <=> $b} @matches;
+		
 		return (matches => \@matches);
 	}
 	
