@@ -46,6 +46,7 @@ sub logResult {
 	my ($alias, $args, %displayedResult) = @_; 
 	open my $fh, ">>", "$KWRAP_PATH/log";
 	local $" = " ";
+	print $fh "@" . time() . ":\n";
 	print $fh "> $alias @$args\n";
 	print $fh "< $_ => $displayedResult{$_}\n" for (sort keys %displayedResult);
 	close $fh;
