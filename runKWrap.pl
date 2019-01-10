@@ -106,16 +106,17 @@ sub resolveAlias {
 
 
 sub main {
-	our $CONSOLE_INPUT_SYMBOL  = shift @_ // $CONSOLE_INPUT_SYMBOL;
-	our $CONSOLE_OUTPUT_SYMBOL = shift @_ // $CONSOLE_OUTPUT_SYMBOL;
-	our $KWRAP_PATH            = shift @_ // $KWRAP_PATH;
+	my %args = @_;
+	our $CONSOLE_INPUT_SYMBOL = delete $args{"inputSymbol"} if (defined $args{"inputSymbol"}) // $CONSOLE_INPUT_SYMBOL;
+	our $CONSOLE_OUTPUT_SYMBOL = delete $args{"outputSymbol"} if (defined $args{"outputSymbol"}) // $CONSOLE_OUTPUT_SYMBOL;
+	our $KWRAP_PATH = delete $args{"path"} if (defined $args{"path"}) // $KWRAP_PATH;
 	
 	mkdir $KWRAP_PATH;
 	my $kw = KWrap->new(
 		path     => $KWRAP_PATH,
 		# slurpTo  => sub { system "vim $_[0]"; return -e $_[0] }, 
 		# spewFrom => sub { system "vim -R $_[0]"; return 1},
-		defaultLifetime => 5
+		%args
 	);
 	
 	print $CONSOLE_INPUT_SYMBOL;
