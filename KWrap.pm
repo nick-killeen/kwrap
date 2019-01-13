@@ -72,7 +72,7 @@ package KWrap {
 			# minimal reproduction of this issue can be achieved by sending ^C
 			# to the following Perl script:
 			#
-			#              $SIG{'INT'} = sub { print "A"; exit; };
+			#              $SIG{"INT"} = sub { print "A"; exit; };
 			#              <>;
 			#              sleep 1 if (rand() > 0.5);
 			#              print "B";
@@ -89,11 +89,11 @@ package KWrap {
 				local $_;
 				while (<STDIN>) {
 					chomp $_;
-					last if ($_ eq '');
+					last if ($_ eq "");
 					$slurped .= "$_\n";
 				}
 				
-				if ($slurped eq '') {
+				if ($slurped eq "") {
 					return 0;
 				} else {
 					open my $fh, ">", $_[0];
