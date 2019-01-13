@@ -157,7 +157,7 @@ sub testKWrap {
 			spewFrom        => \&testSpewFrom
 		);
 	
-		%o = $kw->push();
+		%o = $kw->push("");
 		$o{actId} eq 1 or die;
 		$o{lifetime} eq 5 or die;
 		$o{slurpHandle}->("A1", 1) or die;
@@ -173,7 +173,7 @@ sub testKWrap {
 			spewFrom => \&testSpewFrom
 		);
 		
-		%o = $kw->push();
+		%o = $kw->push("");
 		$o{actId} eq 2 or die;
 		$o{lifetime} eq 1 or die;
 		$o{slurpHandle}->("A2", 1) or die;
@@ -193,7 +193,7 @@ sub testKWrap {
 		%o = $kw->cycle();
 		$o{lifetime} eq 0 or die;
 		
-		%o = $kw->push();
+		%o = $kw->push("");
 		$o{actId} eq 3 or die;
 		$o{lifetime} eq 1 or die;
 		$o{slurpHandle}->("A3", 1) or die;
