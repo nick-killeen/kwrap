@@ -28,7 +28,6 @@ sub testSpewFrom {
 
 sub testKWrap {
 	rmtree $TEST_DIRECTORY;
-	mkdir $TEST_DIRECTORY;
 	my $kw = KWrap->new(
 		path     => $TEST_DIRECTORY,
 		slurpTo  => \&testSlurpTo,

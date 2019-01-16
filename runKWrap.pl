@@ -111,7 +111,6 @@ sub main {
 	our $CONSOLE_OUTPUT_SYMBOL = delete $args{"outputSymbol"} if (defined $args{"outputSymbol"}) // $CONSOLE_OUTPUT_SYMBOL;
 	our $KWRAP_PATH = delete $args{"path"} if (defined $args{"path"}) // $KWRAP_PATH;
 	
-	mkdir $KWRAP_PATH;
 	my $kw = KWrap->new(
 		path     => $KWRAP_PATH,
 		# slurpTo  => sub { system "vim $_[0]"; return -e $_[0] }, 
