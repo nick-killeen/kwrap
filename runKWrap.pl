@@ -3,9 +3,10 @@ use strict;
 
 use KWrap;
 
-our $CONSOLE_INPUT_SYMBOL = "\$ ";
-our $CONSOLE_OUTPUT_SYMBOL = "| ";
-our $KWRAP_PATH = "data";
+our $CONSOLE_INPUT_SYMBOL;
+our $CONSOLE_OUTPUT_SYMBOL;
+our $LOG_PATH;
+our %KWRAP_ARGS;
 
 sub applyFilter {
 	my ($filter, %result) = @_;
@@ -44,7 +45,7 @@ sub display {
 
 sub logResult {
 	my ($alias, $args, %displayedResult) = @_; 
-	open my $fh, ">>", "$KWRAP_PATH/log";
+	open my $fh, ">>", "$LOG_PATH" or die "Could not open log file '$LOG_PATH'";
 	local $" = " ";
 	print $fh "@" . time() . ":\n";
 	print $fh "> $alias @$args\n";
@@ -106,17 +107,13 @@ sub resolveAlias {
 
 
 sub main {
-	my %args = @_;
-	our $CONSOLE_INPUT_SYMBOL = delete $args{"inputSymbol"} if (defined $args{"inputSymbol"}) // $CONSOLE_INPUT_SYMBOL;
-	our $CONSOLE_OUTPUT_SYMBOL = delete $args{"outputSymbol"} if (defined $args{"outputSymbol"}) // $CONSOLE_OUTPUT_SYMBOL;
-	our $KWRAP_PATH = delete $args{"path"} if (defined $args{"path"}) // $KWRAP_PATH;
+	my ($configPath) = @_;
+	$configPath //= "./config.pl";
 	
-	my $kw = KWrap->new(
-		path     => $KWRAP_PATH,
-		# slurpTo  => sub { system "vim $_[0]"; return -e $_[0] }, 
-		# spewFrom => sub { system "vim -R $_[0]"; return 1},
-		%args
-	);
+	do $configPath or
+		die "Configuration file '$configPath' failed to return non-zero code";
+	
+	my $kw = KWrap->new(%KWRAP_ARGS);
 	
 	print $CONSOLE_INPUT_SYMBOL;
 	while (<STDIN>) {
