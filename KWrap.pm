@@ -32,7 +32,7 @@ use warnings;
 use strict;
 
 use Data::Dumper;
-use Karma 0.02;
+use Karma 0.04;
 
 package KWrap::CODE {
 	our $BAD_ID                 = "Invalid actId.";
@@ -143,14 +143,13 @@ package KWrap {
 				die "Invalid default lifetime '$self->{defaultLifetime}'";
 			}
 		}
-	
+		
 		if (-e "$self->{path}/Karma") {
 			$self->{k}->load(path => "$self->{path}/Karma");
 		} else {
 			$self->_save();
+			mkdir "$self->{path}/acts";
 		}
-	
-		mkdir "$self->{path}/acts";
 		
 		return $self;
 	}
@@ -200,7 +199,8 @@ package KWrap {
 	
 	sub _save {
 		my ($self) = @_;
-	
+		
+		mkdir $self->{path};
 		$self->{k}->save(path => "$self->{path}/Karma");
 		
 		return 1;
