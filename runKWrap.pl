@@ -96,7 +96,7 @@ sub resolveAlias {
 
 sub main {
 	my ($configPath) = @_;
-	$configPath //= "./config.pl";
+	$configPath //= "./configs/default.pl";
 	
 	do $configPath or
 		die "Configuration file '$configPath' failed to return non-zero code";
