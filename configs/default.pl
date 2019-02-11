@@ -21,7 +21,7 @@ our %COMMANDS = (
 
 our %KWRAP_ARGS = (
 	path => "KWrap",
-	slurpTo  => sub { system "vim $_[0]"; return -e $_[0] }, 
+	slurpTo  => sub { system "vim $_[0]"; return -e $_[0] // 0 }, 
 	spewFrom => sub { system "vim -R $_[0]"; return 1},	
 	defaultLifetime => 2,
 );
